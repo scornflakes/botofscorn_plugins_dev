@@ -83,7 +83,7 @@ class MNFHRules(callbacks.Plugin):
         """Welcomes the user to the chan!!
         """
         irc.reply(
-            "Welcome to #mnfh {0}! We look forward to getting to know you! Please read more about the chat and rules here: http://goo.gl/dh08Gr".format(
+            "Welcome to #mnfh {0}! We look forward to getting to know you! Please read more about the chat and rules here: http://mnfh.net/".format(
                 newusername))
 
     welcome = wrap(welcome, ['text'])
