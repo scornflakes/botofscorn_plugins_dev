@@ -179,7 +179,7 @@ class Timebomb(callbacks.Plugin):
                 self.irc.sendMsg(ircmsgs.privmsg(self.channel, '\x031,1.......\x034,1`-=\x037,1#$\x038,1%&\x037,1%$#\x034,1=-\'\x031,1........'))
             else:
                 self.irc.sendMsg(ircmsgs.privmsg(self.channel, ircutils.bold(ircutils.mircColor('KABOOM!', '4'))))
-            self.irc.queueMsg(ircmsgs.kick(self.channel, self.victim, ircutils.bold(ircutils.mircColor('BOOM!', '4'))))
+            #self.irc.queueMsg(ircmsgs.kick(self.channel, self.victim, ircutils.bold(ircutils.mircColor('BOOM!', '4'))))
             def reinvite():
                 if not self.victim in irc.state.channels[self.channel].users:
                     self.irc.queueMsg(ircmsgs.invite(self.victim, self.channel))
