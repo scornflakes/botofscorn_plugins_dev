@@ -57,7 +57,13 @@ class LoveHate(callbacks.Plugin):
             def add(self, emotion, at, by, text, **kwargs):
                 record = self.Record(emotion=emotion, at=at, by=by, text=text, **kwargs)
                 return super(self.__class__, self).add(record)
-                
+
+    def _unpingatize(self, str1):
+	if len(str1)>1:
+	#str1="xx\x0313"+str1+"\x03xx"
+	str1="xx"+str1+"xx"
+	return str1
+       
     def __init__(self, irc):
         self.__parent = super(LoveHate, self)
         self.__parent.__init__(irc)
