@@ -132,7 +132,7 @@ class MNFHRules(callbacks.Plugin):
         """ bandages person
         """
         irc.reply("patches %s up with a band-aid \x0308(:::::[::::]:::::)\x0300, "
-                  "\x0313'Now you be carefull next time'" % user_name)
+                  "\x0313'Now you be careful next time'" % user_name)
 
     bandaid = wrap(bandaid, ['text'])
 
@@ -141,7 +141,7 @@ class MNFHRules(callbacks.Plugin):
         """ roll your eyes at person
         """
         irc.reply("\xe2\x97\x94\xcc\xaf\xe2\x97\x94 %s" % user_name)
-    eyeroll = wrap(eyeroll, [additional(('text', 'directed at'), "")])
+    eyeroll = wrap(eyeroll, [optional(('text', 'directed at'), "")])
 
     @internationalizeDocstring
     def translate(self, irc, msg, args,  text):
@@ -156,7 +156,7 @@ class MNFHRules(callbacks.Plugin):
         url = 'http://www.gizoogle.net/textilizer.php'
 
         html = requests.post(url, data={'translatetext': text}).text
-        return BeautifulSoup(html).textarea.contents[0].strip()
+        irc.reply( BeautifulSoup(html).textarea.contents[0].strip())
     translate = wrap(translate, ['text'])
 
 Class = MNFHRules
