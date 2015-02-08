@@ -70,6 +70,7 @@ class DuckHunt(callbacks.Plugin):
     leader = {}        # Who is the leader for the week?
     reloading = {}     # Who is currently reloading?
     reloadtime = {}    # Time to reload after shooting (in seconds)
+    duck_type = {}
 
     # Does a duck needs to be launched?
     lastSpoke = {}
@@ -175,12 +176,6 @@ class DuckHunt(callbacks.Plugin):
         pickle.dump(self.channelweek[channel], outputfile)
         outputfile.close()
 
-
-
-
-
-
-
     def _read_scores(self, channel):
         """
         Reads scores and times from disk
@@ -215,10 +210,9 @@ class DuckHunt(callbacks.Plugin):
                 inputfile.close()
 
 
-
     def _initdayweekyear(self, channel):
-        self.dow = int(time.strftime("%u")) # Day of week
-        self.woy = int(time.strftime("%V")) # Week of year
+        self.dow = int(time.strftime("%u"))  # Day of week
+        self.woy = int(time.strftime("%V"))  # Week of year
         year = time.strftime("%Y")
 
         # Init week scores
@@ -253,7 +247,7 @@ class DuckHunt(callbacks.Plugin):
 
 
         if self.registryValue('autoFriday', channel) == True:
-            if int(time.strftime("%w")) == 5 and int(time.strftime("%H")) > 8 and int(time.strftime("%H")) < 17:
+            if int(time.strftime("%w")) == 5 and 8 < int(time.strftime("%H")) < 17:
                 self.fridayMode[channel] = True
             else:
                 self.fridayMode[channel] = False
@@ -288,7 +282,6 @@ class DuckHunt(callbacks.Plugin):
 
         self.throttle[channel] = random.randint(self.minthrottle[channel], self.maxthrottle[channel])
 
-
     def start(self, irc, msg, args):
         """
         Starts the hunt
@@ -296,7 +289,6 @@ class DuckHunt(callbacks.Plugin):
 
         currentChannel = msg.args[0]
         if irc.isChannel(currentChannel):
-
             if(self.started.get(currentChannel) == True):
                 irc.reply("There is already a hunt right now!")
             else:
@@ -351,7 +343,9 @@ class DuckHunt(callbacks.Plugin):
                 self.shoots[currentChannel] = 0
 
                 # Init averagetime
-                self.averagetime[currentChannel] = 0;
+                self.averagetime[currentChannel] = 0
+
+                self.duck_type[currentChannel] = 'normal'
 
                 # Init schedule
 
@@ -850,150 +844,169 @@ class DuckHunt(callbacks.Plugin):
                 self._launch(irc, msg, '')
     dbg = wrap(dbg)
 
-
+    def befree(self, irc, msg, args):
+        """
+        Saves the duck!
+        """
+        self._process_shot( irc, msg, args, 'save')
+    befree = wrap(befree)
 
     def bang(self, irc, msg, args):
         """
         Shoots the duck!
         """
-        currentChannel = msg.args[0]
-
-        if irc.isChannel(currentChannel):
-            if(self.started.get(currentChannel) == True):
-
-                # bangdelay: how much time between the duck was launched and this shot?
-                if self.times[currentChannel]:
-                    bangdelay = time.time() - self.times[currentChannel]
-                else:
-                    bangdelay = False
-
-
-                # Is the player reloading?
-                if (self.reloading[currentChannel].get(msg.nick) and time.time() - self.reloading[currentChannel][msg.nick] < self.reloadtime[currentChannel]):
-                    irc.reply("%s, you are reloading... (Reloading takes %i seconds)" % (self._unpingatize(msg.nick), self.reloadtime[currentChannel]))
-                    return 0
-
-
-                # This player is now reloading
-                self.reloading[currentChannel][msg.nick] = time.time();
-
-                # There was a duck
-                if (self.duck[currentChannel] == True):
-
-                    # Did the player missed it?
-                    if (random.random() < self.missprobability[currentChannel]):
-                        irc.reply("%s, you missed the duck!" % (self._unpingatize(msg.nick)))
-                    else:
-
-                        # Adds one point for the nick that shot the duck
-                        try:
-                            self.scores[currentChannel][msg.nick] += 1
-                        except:
-                            try:
-                                self.scores[currentChannel][msg.nick] = 1
-                            except:
-                                self.scores[currentChannel] = {}
-                                self.scores[currentChannel][msg.nick] = 1
-                        if 'free' in str(msg) or 'pokeball' in str(msg):
-                            irc.reply("(\_o<) rescued and put on a nice farm to live out its days peacefully  %s: %i (%.2f seconds)" % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
-			else:
-                        	irc.reply("\_x< %s: %i (%.2f seconds). Be careful, you have ruffled the duck queen" % (self._unpingatize(msg.nick),  self.scores[currentChannel][msg.nick], bangdelay))
-				if  random.random()<0.50:
-					
-                        		irc.reply("\_o<\_o<\_o< %s >o_/>o_/>o_/ THE DUCKS ATTACK!" % (self._unpingatize(msg.nick)))
-                        		
-                        		if 'boom' in str(msg):
-						irc.queueMsg(ircmsgs.kick(currentChannel, msg.nick, "\_o<\_o<\_o< %s >o_/>o_/>o_/ THE DUCKS ATTACK!" % (self._unpingatize(msg.nick))))
-                        self.averagetime[currentChannel] += bangdelay
-
-                        # Now save the bang delay for the player (if it's quicker than it's previous bangdelay)
-                        try:
-                            previoustime = self.toptimes[currentChannel][msg.nick]
-                            if(bangdelay < previoustime):
-                                self.toptimes[currentChannel][msg.nick] = bangdelay
-                        except:
-                            self.toptimes[currentChannel][msg.nick] = bangdelay
-
-
-                        # Now save the bang delay for the player (if it's worst than it's previous bangdelay)
-                        try:
-                            previoustime = self.worsttimes[currentChannel][msg.nick]
-                            if(bangdelay > previoustime):
-                                self.worsttimes[currentChannel][msg.nick] = bangdelay
-                        except:
-                            self.worsttimes[currentChannel][msg.nick] = bangdelay
-
-
-                        self.duck[currentChannel] = False
-
-                        # Reset the basetime for the waiting time before the next duck
-                        self.lastSpoke[currentChannel] = time.time()
-
-                        if self.registryValue('ducks', currentChannel):
-                            maxShoots = self.registryValue('ducks', currentChannel)
-                        else:
-                            maxShoots = 10
-
-                        # End of Hunt
-                        if (self.shoots[currentChannel]  == maxShoots):
-                            self._end(irc, msg, args)
-
-                            # If autorestart is enabled, we restart a hunt automatically!
-                            if self.registryValue('autoRestart', currentChannel):
-                                # This code shouldn't be here
-                                self.started[currentChannel] = True
-                                self._initthrottle(irc, msg, args, currentChannel)
-                                if self.scores.get(currentChannel):
-                                    self.scores[currentChannel] = {}
-                                if self.reloading.get(currentChannel):
-                                    self.reloading[currentChannel] = {}
-
-                                self.averagetime[currentChannel] = 0
-
-
-                # There was no duck or the duck has already been shot
-                else:
-
-                    # Removes one point for the nick that shot
-                    try:
-                        self.scores[currentChannel][msg.nick] -= 1
-                    except:
-                        try:
-                            self.scores[currentChannel][msg.nick] = -1
-                        except:
-                            self.scores[currentChannel] = {}
-                            self.scores[currentChannel][msg.nick] = -1
-
-                    # Base message
-                    message = 'There was no duck!'
-
-                    # Adding additional message if kick
-                    if self.registryValue('kickMode', currentChannel) and irc.nick in irc.state.channels[currentChannel].ops:
-                        message += ' You just shot yourself!'
-
-                    # Adding nick and score
-                    message += " %s: %i" % (self._unpingatize(msg.nick), self.scores[currentChannel][msg.nick])
-
-                    # If we were able to have a bangdelay (ie: a duck was launched before someone did bang)
-                    if (bangdelay):
-                        # Adding time
-                        message += " (" + str(round(bangdelay,2)) + " seconds)"
-
-                    # If kickMode is enabled for this channel, and the bot have op capability, let's kick!
-                    if self.registryValue('kickMode', currentChannel) and irc.nick in irc.state.channels[currentChannel].ops:
-                        irc.queueMsg(ircmsgs.kick(currentChannel, msg.nick, message))
-                    else:
-                        # Else, just say it
-                        irc.reply(message)
-
-
-            else:
-                irc.reply("There is no hunt right now! You can start a hunt with the 'start' command")
-        else:
-            irc.error('You have to be on a channel')
-
+        self._process_shot( irc, msg, args, 'kill')
     bang = wrap(bang)
 
+    def _increment_score(self, currentChannel, msg, bangdelay):
+        # Adds one point for the nick that shot the duck
+        try:
+            self.scores[currentChannel][msg.nick] += 1
+        except:
+            try:
+                self.scores[currentChannel][msg.nick] = 1
+            except:
+                self.scores[currentChannel] = {}
+                self.scores[currentChannel][msg.nick] = 1
+        self.averagetime[currentChannel] += bangdelay
+
+        # Now save the bang delay for the player (if it's quicker than it's previous bangdelay)
+        try:
+            previoustime = self.toptimes[currentChannel][msg.nick]
+            if(bangdelay < previoustime):
+                self.toptimes[currentChannel][msg.nick] = bangdelay
+        except:
+            self.toptimes[currentChannel][msg.nick] = bangdelay
+
+        # Now save the bang delay for the player (if it's worst than it's previous bangdelay)
+        try:
+            previoustime = self.worsttimes[currentChannel][msg.nick]
+            if bangdelay > previoustime:
+                self.worsttimes[currentChannel][msg.nick] = bangdelay
+        except:
+            self.worsttimes[currentChannel][msg.nick] = bangdelay
+
+    def _decrement_score(self, currentChannel, msg):
+            # Removes one point for the nick that shot
+        try:
+            self.scores[currentChannel][msg.nick] -= 1
+        except:
+            try:
+                self.scores[currentChannel][msg.nick] = -1
+            except:
+                self.scores[currentChannel] = {}
+                self.scores[currentChannel][msg.nick] = -1
+
+    def _process_shot(self, irc, msg, args, player_action):
+        currentChannel = msg.args[0]
+
+        if not irc.isChannel(currentChannel):
+            irc.error('You have to be on a channel')
+            return
+
+        if not self.started.get(currentChannel):
+            irc.reply("There is no hunt right now! Ask an op to start a hunt!")
+            return
+
+        # bangdelay: how much time between the duck was launched and this shot?
+        if self.times[currentChannel]:
+            bangdelay = time.time() - self.times[currentChannel]
+        else:
+            bangdelay = False
+
+        # Is the player reloading?
+        if (self.reloading[currentChannel].get(msg.nick)
+            and time.time() - self.reloading[currentChannel][msg.nick] < self.reloadtime[currentChannel]):
+            irc.reply("%s, you are reloading... (Reloading takes %i seconds)"
+                      % (self._unpingatize(msg.nick), self.reloadtime[currentChannel]))
+            return 0
+
+        # This player is now reloading
+        self.reloading[currentChannel][msg.nick] = time.time()
+
+        # There was a duck
+        if self.duck[currentChannel]:
+
+            # Did the player miss it?
+            if random.random() < self.missprobability[currentChannel]:
+                irc.reply("%s, you missed the duck!" % (self._unpingatize(msg.nick)))
+            else:
+                if self.duck_type[currentChannel] == 'normal' and player_action == 'save':
+                    self._increment_score(currentChannel, msg, bangdelay)
+                    irc.reply("(\_o<) rescued and put on a nice farm to live out its days peacefully"
+                              "  %s: %i (%.2f seconds)"
+                              % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
+
+                if self.duck_type[currentChannel] == 'normal' and player_action == 'kill':
+                    if self.registryValue('evilMode', currentChannel):
+                        self._decrement_score(currentChannel, msg)
+                    else:
+                        self._increment_score(currentChannel, msg)
+                    irc.reply("\_x  you killed the poor duck :("
+                              "  %s: %i (%.2f seconds)"
+                              % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
+                if self.duck_type[currentChannel] == 'evil' and player_action == 'kill':
+                    self._increment_score(currentChannel, msg, bangdelay)
+                    irc.reply("(\_.o<) you saved the duck but it came back and bit your groin"
+                              "  %s: %i (%.2f seconds)"
+                              % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
+                if self.duck_type[currentChannel] == 'evil' and player_action == 'save':
+                    self._decrement_score(currentChannel, msg)
+                    irc.reply("\_.x< you killed the evil duck :D"
+                              "  %s: %i (%.2f seconds)"
+                              % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
+
+                self.duck[currentChannel] = False
+
+                # Reset the basetime for the waiting time before the next duck
+                self.lastSpoke[currentChannel] = time.time()
+
+                if self.registryValue('ducks', currentChannel):
+                    maxShoots = self.registryValue('ducks', currentChannel)
+                else:
+                    maxShoots = 10
+
+                # End of Hunt
+                if self.shoots[currentChannel] == maxShoots:
+                    self._end(irc, msg, args)
+
+                    # If autorestart is enabled, we restart a hunt automatically!
+                    if self.registryValue('autoRestart', currentChannel):
+                        # This code shouldn't be here
+                        self.started[currentChannel] = True
+                        self._initthrottle(irc, msg, args, currentChannel)
+                        if self.scores.get(currentChannel):
+                            self.scores[currentChannel] = {}
+                        if self.reloading.get(currentChannel):
+                            self.reloading[currentChannel] = {}
+
+                        self.averagetime[currentChannel] = 0
+
+        # There was no duck or the duck has already been shot
+        else:
+            self._decrement_score()
+
+            # Base message
+            message = 'There was no duck!'
+
+            # Adding additional message if kick
+            if self.registryValue('kickMode', currentChannel) and irc.nick in irc.state.channels[currentChannel].ops:
+                message += ' You just shot yourself!'
+
+            # Adding nick and score
+            message += " %s: %i" % (self._unpingatize(msg.nick), self.scores[currentChannel][msg.nick])
+
+            # If we were able to have a bangdelay (ie: a duck was launched before someone did bang)
+            if (bangdelay):
+                # Adding time
+                message += " (" + str(round(bangdelay,2)) + " seconds)"
+
+            # If kickMode is enabled for this channel, and the bot have op capability, let's kick!
+            if self.registryValue('kickMode', currentChannel) and irc.nick in irc.state.channels[currentChannel].ops:
+                irc.queueMsg(ircmsgs.kick(currentChannel, msg.nick, message))
+            else:
+                # Else, just say it
+                irc.reply(message)
 
 
     def _end(self, irc, msg, args):
@@ -1144,43 +1157,59 @@ class DuckHunt(callbacks.Plugin):
         # Reinit number of shoots
         self.shoots[currentChannel] = 0
 
+    def practiceduck(self, irc, msg, args):
+        self._launch(self, irc, msg, args, practiceduck=True)
 
+    practiceduck = wrap(practiceduck)
 
-    def _launch(self, irc, msg, args):
+    def _launch(self, irc, msg, args, practiceduck=False):
         """
         Launch a duck
         """
         currentChannel = msg.args[0]
-        if irc.isChannel(currentChannel):
-            if(self.started[currentChannel] == True):
-                if (self.duck[currentChannel] == False):
-
-                    # Store the time when the duck has been launched
-                    self.times[currentChannel] = time.time()
-
-                    # Store the fact that there's a duck now
-                    self.duck[currentChannel] = True
-
-                    # Set duck replies
-                    quack = ['\_o< A wild duck appears!', '\_o< quack!', 'quack! >o_/', '\_o< honk!', '\_o< kvaak!']
-
-                    # Send message directly (instead of queuing it with irc.reply)
-                    irc.sendMsg(ircmsgs.privmsg(currentChannel,(random.choice(quack))))
-
-                    # Define a new throttle[currentChannel] for the next launch
-                    self.throttle[currentChannel] = random.randint(self.minthrottle[currentChannel], self.maxthrottle[currentChannel])
-
-                    try:
-                        self.shoots[currentChannel] += 1
-                    except:
-                        self.shoots[currentChannel] = 1
-                else:
-
-                    irc.reply("Already a duck")
-            else:
-                irc.reply("The hunt has not started yet!")
-        else:
+        if not irc.isChannel(currentChannel):
             irc.error('You have to be on a channel')
+            return
+        if not self.started[currentChannel]:
+            irc.reply("The hunt has not started yet!")
+            return
+        if self.duck[currentChannel]:
+            irc.reply("Already a duck")
+            return
+
+        # Store the time when the duck has been launched
+        self.times[currentChannel] = time.time()
+
+        # Store the fact that there's a duck now
+        self.duck[currentChannel] = True
+
+        # Set duck replies
+        quack = ['\_o< A wild duck appears!', '\_o< quack!', '\_o< honk!', '\_o< kvaak!']
+
+        current_duck = random.choice(quack)
+
+        if practiceduck:
+                self.duck_type='practice'
+        elif self.registryValue('evilMode', currentChannel):
+            self.duck_type[currentChannel] = random.choice('normal', 'evil')
+            if self.duck_type == "evil":
+                current_duck = current_duck.replace('o', 'o.')
+
+        # Send message directly (instead of queuing it with irc.reply)
+        irc.sendMsg(ircmsgs.privmsg(currentChannel, current_duck))
+
+        # Define a new throttle[currentChannel] for the next launch
+        self.throttle[currentChannel] = random.randint(self.minthrottle[currentChannel], self.maxthrottle[currentChannel])
+
+        try:
+            self.shoots[currentChannel] += 1
+        except:
+            self.shoots[currentChannel] = 1
+
+
+
+
+
 
 
 Class = DuckHunt
