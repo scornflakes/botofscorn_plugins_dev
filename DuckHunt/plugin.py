@@ -287,7 +287,7 @@ class DuckHunt(callbacks.Plugin):
         current_channel = msg.args[0]
         if irc.isChannel(current_channel):
             if self.registryValue('controlOpsOnly', current_channel) \
-                    and msg.nick not in self.registryValue('ops', current_channel):
+                    and msg.nick not in self.registryValue('ops', current_channel).split(','):
                 irc.reply("Ask an op to start a hunt!")
                 return
             if self.started.get(current_channel):
@@ -389,7 +389,7 @@ class DuckHunt(callbacks.Plugin):
         if irc.isChannel(currentChannel):
 
             if self.registryValue('controlOpsOnly', currentChannel) \
-                    and msg.nick not in self.registryValue('ops', currentChannel):
+                    and msg.nick not in self.registryValue('ops', currentChannel).split(','):
                 irc.reply("Ask an op to stop a hunt!")
                 return
             if (self.started.get(currentChannel) == True):
