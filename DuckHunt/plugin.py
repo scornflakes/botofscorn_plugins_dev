@@ -1166,7 +1166,7 @@ class DuckHunt(callbacks.Plugin):
         """
         Launch a practice duck
         """
-        self._launch(self, irc, msg, args, True)
+        self._launch(self, irc, msg, args, pd=True)
 
     practiceduck = wrap(practiceduck)
 
