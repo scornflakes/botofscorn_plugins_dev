@@ -67,6 +67,8 @@ conf.registerChannelValue(DuckHunt, 'kickMode',
 conf.registerChannelValue(DuckHunt, 'autoFriday',
      registry.Boolean(True, """ Do we need to automatically launch more ducks on friday? """))
 
+conf.registerChannelValue(DuckHunt, 'evilMode',
+     registry.Boolean(False, """ Both good and evil ducks? """))
 
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
