@@ -74,10 +74,15 @@ class MNFHRules(callbacks.Plugin):
     def welcome(self, irc, msg, args, newusername):
         """Welcomes the user to the chan!!
         """
-        irc.reply(
-            "Welcome to #mnfh {0}! We look forward to getting to know you! Please read more about the chat and rules here: http://mnfh.net/rules".format(
-                newusername))
+        current_channel = msg.args[0]
+        if current_channel == '#mnfh':
+            irc.reply(
+                "Welcome to #mnfh {0}! We look forward to getting to know you! "
+                "Please read more about the chat and rules here: http://mnfh.net/rules".format(newusername))
+        else:
 
+            irc.reply(
+                "Welcome to {0}, {1}! We look forward to getting to know you! ".format(current_channel, newusername))
     welcome = wrap(welcome, ['text'])
 
     @internationalizeDocstring
