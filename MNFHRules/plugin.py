@@ -141,7 +141,7 @@ class MNFHRules(callbacks.Plugin):
         """ eyeroll
         """
         irc.reply("\xe2\x97\x94\xcc\xaf\xe2\x97\x94 %s" % user_name)
-    eyeroll = wrap(eyeroll, ['text'])
+    eyeroll = wrap(eyeroll, [additional(('text', 'directed at'), "")])
 
     @internationalizeDocstring
     def translate(self, irc, msg, args,  text):
@@ -157,7 +157,7 @@ class MNFHRules(callbacks.Plugin):
 
         html = requests.post(url, data={'translatetext': text}).text
         return BeautifulSoup(html).textarea.contents[0].strip()
-    translate = wrap(eyeroll, ['text'])
+    translate = wrap(translate, ['text'])
 
 Class = MNFHRules
 
