@@ -75,6 +75,7 @@ class DuckHunt(callbacks.Plugin):
     reloading = {}  # Who is currently reloading?
     reloadtime = {}  # Time to reload after shooting (in seconds)
     duck_type = {}
+    is_practice_duck = {}
 
     # Does a duck needs to be launched?
     lastSpoke = {}
@@ -342,7 +343,7 @@ class DuckHunt(callbacks.Plugin):
                 self.averagetime[current_channel] = 0
 
                 self.duck_type[current_channel] = 'normal'
-
+                self.is_practice_duck[current_channel] = False
                 # Init schedule
 
                 # First of all, stop the scheduler if it was still running
