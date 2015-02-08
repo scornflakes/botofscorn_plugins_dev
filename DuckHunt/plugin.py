@@ -927,7 +927,7 @@ class DuckHunt(callbacks.Plugin):
         # There was a duck
         if self.duck[currentChannel]:
 
-            if self.duck_type[currentChannel]=='practice':
+            if self.duck_type[currentChannel] == 'practice':
                 irc.reply("\_x<  yay %s! you got the practice duck!!!" % (self._unpingatize(msg.nick)))
                 self._increment_score(currentChannel, msg, bangdelay)
                 self.duck[currentChannel] = False
@@ -1171,7 +1171,7 @@ class DuckHunt(callbacks.Plugin):
         if not irc.isChannel(currentChannel):
             irc.error('You have to be on a channel')
             return
-        if not self.started[currentChannel]:
+        if currentChannel not in self.started or not self.started[currentChannel]:
             irc.reply("The hunt has not started yet!")
             return
         if self.duck[currentChannel]:
@@ -1184,7 +1184,7 @@ class DuckHunt(callbacks.Plugin):
         self.duck[currentChannel] = True
 
         # Send message directly (instead of queuing it with irc.reply)
-        irc.sendMsg(ircmsgs.privmsg(currentChannel, '\_o< quack!  (practice)'))
+        irc.sendMsg(ircmsgs.privmsg(currentChannel, '\_o< quack!  (practice... say ".bang!")'))
 
         # Define a new throttle[currentChannel] for the next launch
         self.throttle[currentChannel] = random.randint(self.minthrottle[currentChannel], self.maxthrottle[currentChannel])
