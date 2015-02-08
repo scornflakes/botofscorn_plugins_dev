@@ -71,14 +71,6 @@ class MNFHRules(callbacks.Plugin):
     isitmonday = wrap(isitmonday)
 
     @internationalizeDocstring
-    def test1(self, irc, msg, args):
-	""" Testing only
-	"""
-
-	irc.reply("{0}".format(str(msg)))
-
-    test1=wrap(test1)
-
     def welcome(self, irc, msg, args, newusername):
         """Welcomes the user to the chan!!
         """
@@ -98,21 +90,6 @@ class MNFHRules(callbacks.Plugin):
 
     dance = wrap(dance)
 
-    @internationalizeDocstring
-    def murica(self, irc, msg, args):
-        """Murica!!!
-        """
-        irc.reply('Fuck YEAH!')
-
-    murica = wrap(murica)
-
-    @internationalizeDocstring
-    def britain(self, irc, msg, args):
-        """Britain!!!
-        """
-        irc.reply('Would you care for a spot of tea?')
-
-    britain = wrap(britain)
 
     @internationalizeDocstring
     def whatislove(self, irc, msg, args):
@@ -136,17 +113,16 @@ class MNFHRules(callbacks.Plugin):
     def stab(self, irc, msg, args, user_name):
         """ Stab function to stab your enemies
         """
-        if  random.random() < 0.10:
+        if random.random() < 0.0001:
             irc.reply(
                 "%s tries to stab %s, but instead they slip and accidentally stab themself!" % (msg.nick, user_name))
             irc.reply("\x0308o()\x0304xxxx\x0308[{\x0315::::::*\x0300%s*\x0315::::::>" % msg.nick)
         elif 'scornbot' in user_name.lower():
+            irc.reply("{0:s} tries to stab scornbot, "
+                      "instead scornbot dodges the attack and draws his weapon and fires.".format(msg.nick))
             irc.reply(
-                "{0:s} tries to stab scornbot, instead scornbot dodges the attack and draws his weapon and fires.".format(
-                    msg.nick))
-            irc.reply(
-                '\u003d\u03b5\u002f\u0335\u0347\u033f\u033f\u002f\u0027\u033f\u0027\u033f\u033f  BANG!            X_X < {0}.'.format(
-                    msg.nick))
+                '\u003d\u03b5\u002f\u0335\u0347\u033f\u033f\u002f\u0027\u033f\u0027\u033f\u033f  '
+                'BANG!            X_X < {0}.'.format( msg.nick))
         else:
             irc.reply("\x0308o()\x0304xxxx\x0308[{\x0315::::::*\x0300%s*\x0315::::::>" % user_name)
     stab = wrap(stab, ['text'])
@@ -154,10 +130,12 @@ class MNFHRules(callbacks.Plugin):
     @internationalizeDocstring
     def bandaid(self, irc, msg, args, user_name):
         """ eyeroll
-	"""
-	irc.reply("patches %s up with a band-aid \x0308(:::::[::::]:::::)\x0300, \x0313'Now you be carefull next time'" % user_name)
-        #irc.reply("\x0308o()\x0304xxxx\x0308[{\x0315::::::*\x0300%s*\x0315::::::>" % user_name)
+        """
+        irc.reply("patches %s up with a band-aid \x0308(:::::[::::]:::::)\x0300, "
+                  "\x0313'Now you be carefull next time'" % user_name)
+
     bandaid = wrap(bandaid, ['text'])
+
     @internationalizeDocstring
     def eyeroll(self, irc, msg, args, user_name):
         """ eyeroll
@@ -166,13 +144,20 @@ class MNFHRules(callbacks.Plugin):
     eyeroll = wrap(eyeroll, ['text'])
 
     @internationalizeDocstring
-    def kinematic1(self, irc, msg, args, user_name):
-        """ impersonate kinematic1
+    def translate(self, irc, msg, args,  text):
         """
-        irc.reply("hiyooooooooooooooo {0:s}!".format(user_name))
+        Example:
+        import gizoogle
+        print(gizoogle.translate('Hey, How are you?'))
+        # Will print 'Yo, how tha fuck is yo slick ass?'
+        """
+        from BeautifulSoup import BeautifulSoup
+        import requests
+        url = 'http://www.gizoogle.net/textilizer.php'
 
-    kinematic1 = wrap(kinematic1, ['text'])
-
+        html = requests.post(url, data={'translatetext': text}).text
+        return BeautifulSoup(html).textarea.contents[0].strip()
+    translate = wrap(eyeroll, ['translate'])
 
 Class = MNFHRules
 
