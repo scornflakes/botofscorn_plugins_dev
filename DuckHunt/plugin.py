@@ -1182,7 +1182,7 @@ class DuckHunt(callbacks.Plugin):
 
         # Store the fact that there's a duck now
         self.duck[currentChannel] = True
-
+        self.duck_type[currentChannel] = 'practice'
         # Send message directly (instead of queuing it with irc.reply)
         irc.sendMsg(ircmsgs.privmsg(currentChannel, '\_o< quack!  (practice... say ".bang!")'))
 
@@ -1217,9 +1217,7 @@ class DuckHunt(callbacks.Plugin):
 
         current_duck = random.choice(quack)
 
-        if pd:
-                self.duck_type[currentChannel] = 'practice'
-        elif self.registryValue('evilMode', currentChannel):
+        if self.registryValue('evilMode', currentChannel):
             self.duck_type[currentChannel] = random.choice('normal', 'evil')
             if self.duck_type[currentChannel] == "evil":
                 current_duck = current_duck.replace('o', 'o.')
