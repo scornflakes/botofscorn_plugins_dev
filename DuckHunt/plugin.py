@@ -1163,10 +1163,9 @@ class DuckHunt(callbacks.Plugin):
         self.shoots[currentChannel] = 0
 
     def practiceduck(self, irc, msg, args):
-          """
+        """
         Launch a practice duck
         """
-
         self._launch(self, irc, msg, args, practiceduck=True)
 
     practiceduck = wrap(practiceduck)
