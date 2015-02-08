@@ -157,7 +157,7 @@ class MNFHRules(callbacks.Plugin):
 
         html = requests.post(url, data={'translatetext': text}).text
         return BeautifulSoup(html).textarea.contents[0].strip()
-    translate = wrap(eyeroll, ['translate'])
+    translate = wrap(eyeroll, ['text'])
 
 Class = MNFHRules
 
