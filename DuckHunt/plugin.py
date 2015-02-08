@@ -1166,11 +1166,31 @@ class DuckHunt(callbacks.Plugin):
         """
         Launch a practice duck
         """
-        self._launch(self, irc, msg, args, pd=True)
+        currentChannel = msg.args[0]
+        if not irc.isChannel(currentChannel):
+            irc.error('You have to be on a channel')
+            return
+        if not self.started[currentChannel]:
+            irc.reply("The hunt has not started yet!")
+            return
+        if self.duck[currentChannel]:
+            irc.reply("Already a duck")
+            return
+       # Store the time when the duck has been launched
+        self.times[currentChannel] = time.time()
+
+        # Store the fact that there's a duck now
+        self.duck[currentChannel] = True
+
+        # Send message directly (instead of queuing it with irc.reply)
+        irc.sendMsg(ircmsgs.privmsg(currentChannel, '\_o< quack!  (practice)'))
+
+        # Define a new throttle[currentChannel] for the next launch
+        self.throttle[currentChannel] = random.randint(self.minthrottle[currentChannel], self.maxthrottle[currentChannel])
 
     practiceduck = wrap(practiceduck)
 
-    def _launch(self, irc, msg, args, pd=False):
+    def _launch(self, irc, msg, args):
         """
         Launch a duck
         """
