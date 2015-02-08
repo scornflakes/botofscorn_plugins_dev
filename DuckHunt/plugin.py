@@ -1166,11 +1166,11 @@ class DuckHunt(callbacks.Plugin):
         """
         Launch a practice duck
         """
-        self._launch(self, irc, msg, args, practiceduck=True)
+        self._launch(self, irc, msg, args, True)
 
     practiceduck = wrap(practiceduck)
 
-    def _launch(self, irc, msg, args, practiceduck=False):
+    def _launch(self, irc, msg, args, pd=False):
         """
         Launch a duck
         """
@@ -1196,7 +1196,7 @@ class DuckHunt(callbacks.Plugin):
 
         current_duck = random.choice(quack)
 
-        if practiceduck:
+        if pd:
                 self.duck_type='practice'
         elif self.registryValue('evilMode', currentChannel):
             self.duck_type[currentChannel] = random.choice('normal', 'evil')
