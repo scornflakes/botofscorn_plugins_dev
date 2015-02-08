@@ -951,7 +951,7 @@ class DuckHunt(callbacks.Plugin):
                 irc.reply("%s, you missed the duck!" % (self._unpingatize(msg.nick)))
             else:
                 if self.duck_type[current_channel] == 'normal' and player_action == 'save':
-                    self._increment_score(current_channel, msg, bangdelay)
+                    self._increment_score(current_channel, msg, self.duck_type[current_channel], bangdelay)
                     irc.reply("(\_o<) rescued and put on a nice farm to live out its days peacefully"
                               "  %s: %i (%.2f seconds)"
                               % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
