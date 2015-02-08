@@ -70,5 +70,14 @@ conf.registerChannelValue(DuckHunt, 'autoFriday',
 conf.registerChannelValue(DuckHunt, 'evilMode',
      registry.Boolean(False, """ Both good and evil ducks? """))
 
+conf.registerChannelValue(DuckHunt, 'evilDuckProbability',
+     registry.Probability(0.35, """The probability to get an evil duck"""))
+
+conf.registerChannelValue(DuckHunt, 'goodDuckPointValue',
+     registry.Integer(1, """Number of points of an good duck"""))
+
+conf.registerChannelValue(DuckHunt, 'evilDuckPointValue',
+     registry.Integer(1, """Number of points of an evil duck"""))
+
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:

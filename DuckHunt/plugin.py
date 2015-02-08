@@ -854,16 +854,21 @@ class DuckHunt(callbacks.Plugin):
 
     bang = wrap(bang)
 
-    def _increment_score(self, currentChannel, msg, bangdelay):
+    def _increment_score(self, currentChannel, msg, duck_type, bangdelay):
         # Adds one point for the nick that shot the duck
+
+
+        pointval = self.registryValue('goodDuckPointValue', currentChannel)
+        if duck_type == 'evil':
+            pointval = self.registryValue('evilDuckPointValue', currentChannel)
         try:
-            self.scores[currentChannel][msg.nick] += 1
+            self.scores[currentChannel][msg.nick] += pointval
         except KeyError:
             try:
-                self.scores[currentChannel][msg.nick] = 1
+                self.scores[currentChannel][msg.nick] = pointval
             except KeyError:
                 self.scores[currentChannel] = {}
-                self.scores[currentChannel][msg.nick] = 1
+                self.scores[currentChannel][msg.nick] = pointval
         self.averagetime[currentChannel] += bangdelay
 
         # Now save the bang delay for the player (if it's quicker than it's previous bangdelay)
@@ -882,16 +887,19 @@ class DuckHunt(callbacks.Plugin):
         except KeyError:
             self.worsttimes[currentChannel][msg.nick] = bangdelay
 
-    def _decrement_score(self, currentChannel, msg):
+    def _decrement_score(self, currentChannel, duck_type, msg):
+        pointval = self.registryValue('goodDuckPointValue', currentChannel) * -1
+        if duck_type == 'evil':
+            pointval = self.registryValue('evilDuckPointValue', currentChannel) * -1
         # Removes one point for the nick that shot
         try:
-            self.scores[currentChannel][msg.nick] -= 1
+            self.scores[currentChannel][msg.nick] += pointval
         except KeyError:
             try:
-                self.scores[currentChannel][msg.nick] = -1
+                self.scores[currentChannel][msg.nick] = pointval
             except KeyError:
                 self.scores[currentChannel] = {}
-                self.scores[currentChannel][msg.nick] = -1
+                self.scores[currentChannel][msg.nick] = pointval
 
     def _process_shot(self, irc, msg, args, player_action):
         current_channel = msg.args[0]
@@ -941,19 +949,19 @@ class DuckHunt(callbacks.Plugin):
 
                 if self.duck_type[current_channel] == 'normal' and player_action == 'kill':
                     if self.registryValue('evilMode', current_channel):
-                        self._decrement_score(current_channel, msg)
+                        self._decrement_score(current_channel, msg, self.duck_type[current_channel])
                     else:
-                        self._increment_score(current_channel, msg, bangdelay)
+                        self._increment_score(current_channel, msg,self.duck_type[current_channel],  bangdelay)
                     irc.reply("\_x  you killed the poor duck :("
                               "  %s: %i (%.2f seconds)"
                               % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
                 if self.duck_type[current_channel] == 'evil' and player_action == 'save':
-                    self._decrement_score(current_channel, msg)
+                    self._decrement_score(current_channel, msg, self.duck_type[current_channel])
                     irc.reply("(\_.o<) you saved the duck but it came back and bit your groin"
                               "  %s: %i (%.2f seconds)"
                               % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
                 if self.duck_type[current_channel] == 'evil' and player_action == 'kill':
-                    self._increment_score(current_channel, msg, bangdelay)
+                    self._increment_score(current_channel, msg, self.duck_type[current_channel],  bangdelay)
                     irc.reply("\_.x< you killed the evil duck :D"
                               "  %s: %i (%.2f seconds)"
                               % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
@@ -1216,10 +1224,10 @@ class DuckHunt(callbacks.Plugin):
         current_duck = random.choice(quack)
 
         self.duck_type[currentChannel] = "normal"
-        if self.registryValue('evilMode', currentChannel):
-            self.duck_type[currentChannel] = random.choice(('normal', 'evil'))
-            if self.duck_type[currentChannel] == "evil":
-                current_duck = current_duck.replace('o<', '.o<')
+        if self.registryValue('evilMode', currentChannel) \
+                and random.random() < self.registryValue('evilDuckProbability', currentChannel):
+            self.duck_type[currentChannel] = "evil"
+            current_duck = current_duck.replace('o<', '.o<')
 
 
         # Send message directly (instead of queuing it with irc.reply)
