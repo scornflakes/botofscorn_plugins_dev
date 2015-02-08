@@ -146,7 +146,7 @@ class MNFHRules(callbacks.Plugin):
     eyeroll = wrap(eyeroll, [optional('text')])
 
     @internationalizeDocstring
-    def translate(self, irc, msg, args,  text):
+    def gizoogle(self, irc, msg, args,  text):
         """
         Example:
         import gizoogle
@@ -159,7 +159,7 @@ class MNFHRules(callbacks.Plugin):
 
         html = requests.post(url, data={'translatetext': text}).text
         irc.reply( BeautifulSoup(html).textarea.contents[0].strip())
-    translate = wrap(translate, ['text'])
+    gizoogle = wrap(gizoogle, ['text'])
 
 Class = MNFHRules
 
