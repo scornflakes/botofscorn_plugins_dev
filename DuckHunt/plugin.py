@@ -862,10 +862,10 @@ class DuckHunt(callbacks.Plugin):
         # Adds one point for the nick that shot the duck
         try:
             self.scores[currentChannel][msg.nick] += 1
-        except:
+        except KeyError:
             try:
                 self.scores[currentChannel][msg.nick] = 1
-            except:
+            except KeyError:
                 self.scores[currentChannel] = {}
                 self.scores[currentChannel][msg.nick] = 1
         self.averagetime[currentChannel] += bangdelay
@@ -875,7 +875,7 @@ class DuckHunt(callbacks.Plugin):
             previoustime = self.toptimes[currentChannel][msg.nick]
             if(bangdelay < previoustime):
                 self.toptimes[currentChannel][msg.nick] = bangdelay
-        except:
+        except KeyError:
             self.toptimes[currentChannel][msg.nick] = bangdelay
 
         # Now save the bang delay for the player (if it's worst than it's previous bangdelay)
@@ -883,17 +883,17 @@ class DuckHunt(callbacks.Plugin):
             previoustime = self.worsttimes[currentChannel][msg.nick]
             if bangdelay > previoustime:
                 self.worsttimes[currentChannel][msg.nick] = bangdelay
-        except:
+        except KeyError:
             self.worsttimes[currentChannel][msg.nick] = bangdelay
 
     def _decrement_score(self, currentChannel, msg):
-            # Removes one point for the nick that shot
+        # Removes one point for the nick that shot
         try:
             self.scores[currentChannel][msg.nick] -= 1
-        except:
+        except KeyError:
             try:
                 self.scores[currentChannel][msg.nick] = -1
-            except:
+            except KeyError:
                 self.scores[currentChannel] = {}
                 self.scores[currentChannel][msg.nick] = -1
 
@@ -929,8 +929,8 @@ class DuckHunt(callbacks.Plugin):
 
             if self.duck_type[currentChannel] == 'practice':
                 irc.reply("\_x<  yay %s! you got the practice duck!!!" % (self._unpingatize(msg.nick)))
-                self._increment_score(currentChannel, msg, bangdelay)
                 self.duck[currentChannel] = False
+                self.lastSpoke[currentChannel] = time.time()
                 return
 
             # Did the player miss it?
