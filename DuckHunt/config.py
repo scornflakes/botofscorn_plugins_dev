@@ -83,5 +83,5 @@ conf.registerChannelValue(DuckHunt, 'controlOpsOnly',
      registry.Boolean(False, """Whether only ops can control duckhunt"""))
 
 conf.registerChannelValue(DuckHunt, 'ops',
-     registry.String('', """Who can control duckhunt"""))
+     registry.String('', """Comma separated list of who can control duckhunt"""))
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
