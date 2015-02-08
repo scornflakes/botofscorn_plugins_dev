@@ -140,8 +140,10 @@ class MNFHRules(callbacks.Plugin):
     def eyeroll(self, irc, msg, args, user_name):
         """ roll your eyes at person
         """
+        if not user_name:
+            user_name = ""
         irc.reply("\xe2\x97\x94\xcc\xaf\xe2\x97\x94 %s" % user_name)
-    eyeroll = wrap(eyeroll, [optional(('text', 'directed at'), "")])
+    eyeroll = wrap(eyeroll, [optional('text')])
 
     @internationalizeDocstring
     def translate(self, irc, msg, args,  text):
