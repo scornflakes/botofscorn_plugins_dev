@@ -1197,10 +1197,10 @@ class DuckHunt(callbacks.Plugin):
         current_duck = random.choice(quack)
 
         if pd:
-                self.duck_type='practice'
+                self.duck_type[currentChannel] = 'practice'
         elif self.registryValue('evilMode', currentChannel):
             self.duck_type[currentChannel] = random.choice('normal', 'evil')
-            if self.duck_type == "evil":
+            if self.duck_type[currentChannel] == "evil":
                 current_duck = current_duck.replace('o', 'o.')
 
         # Send message directly (instead of queuing it with irc.reply)
