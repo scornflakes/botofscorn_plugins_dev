@@ -948,12 +948,12 @@ class DuckHunt(callbacks.Plugin):
                               "  %s: %i (%.2f seconds)"
                               % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
                 if self.duck_type[current_channel] == 'evil' and player_action == 'save':
-                    self._increment_score(current_channel, msg, bangdelay)
+                    self._decrement_score(current_channel, msg)
                     irc.reply("(\_.o<) you saved the duck but it came back and bit your groin"
                               "  %s: %i (%.2f seconds)"
                               % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
                 if self.duck_type[current_channel] == 'evil' and player_action == 'kill':
-                    self._decrement_score(current_channel, msg)
+                    self._increment_score(current_channel, msg, bangdelay)
                     irc.reply("\_.x< you killed the evil duck :D"
                               "  %s: %i (%.2f seconds)"
                               % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
