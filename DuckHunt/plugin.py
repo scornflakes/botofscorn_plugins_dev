@@ -931,6 +931,7 @@ class DuckHunt(callbacks.Plugin):
                 irc.reply("\_x<  yay %s! you got the practice duck!!!" % (self._unpingatize(msg.nick)))
                 self._increment_score(currentChannel, msg, bangdelay)
                 self.duck[currentChannel] = False
+                return
 
             # Did the player miss it?
             if random.random() < self.missprobability[currentChannel]:
