@@ -1223,7 +1223,7 @@ class DuckHunt(callbacks.Plugin):
             if self.duck_type[currentChannel] == "evil":
                 current_duck = current_duck.replace('o', 'o.')
         else:
-            self.duck_type[currentChannel] == "normal"
+            self.duck_type[currentChannel] = "normal"
         # Send message directly (instead of queuing it with irc.reply)
         irc.sendMsg(ircmsgs.privmsg(currentChannel, current_duck))
 
