@@ -5,7 +5,7 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-#   * Redistributions of source code must retain the above copyright notice,
+# * Redistributions of source code must retain the above copyright notice,
 #     this list of conditions, and the following disclaimer.
 #   * Redistributions in binary form must reproduce the above copyright notice,
 #     this list of conditions, and the following disclaimer in the
@@ -27,6 +27,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 ###
 
+import threading
+import random
+import pickle
+import os
+import time
+import datetime
+
 from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.callbacks as callbacks
@@ -35,9 +42,6 @@ import supybot.ircdb as ircdb
 import supybot.ircmsgs as ircmsgs
 import supybot.log as log
 import supybot.conf as conf
-
-
-import threading, random, pickle, os, time, datetime
 
 
 class DuckHunt(callbacks.Plugin):
@@ -51,25 +55,25 @@ class DuckHunt(callbacks.Plugin):
     threaded = True
 
     # Those parameters are per-channel parameters
-    started = {}       # Has the hunt started?
-    duck = {}          # Is there currently a duck to shoot?
-    shoots = {}        # Number of successfull shoots in a hunt
-    scores = {}        # Scores for the current hunt
-    times = {}         # Elapsed time since the last duck was launched
-    channelscores = {} # Saved scores for the channel
-    toptimes = {}      # Times for the current hunt
+    started = {}  # Has the hunt started?
+    duck = {}  # Is there currently a duck to shoot?
+    shoots = {}  # Number of successfull shoots in a hunt
+    scores = {}  # Scores for the current hunt
+    times = {}  # Elapsed time since the last duck was launched
+    channelscores = {}  # Saved scores for the channel
+    toptimes = {}  # Times for the current hunt
     channeltimes = {}  # Saved times for the channel
-    worsttimes = {}    # Worst times for the current hunt
-    channelworsttimes = {} # Saved worst times for the channel
-    averagetime = {}   # Average shooting time for the current hunt
-    fridayMode = {}    # Are we on friday mode? (automatic)
+    worsttimes = {}  # Worst times for the current hunt
+    channelworsttimes = {}  # Saved worst times for the channel
+    averagetime = {}  # Average shooting time for the current hunt
+    fridayMode = {}  # Are we on friday mode? (automatic)
     manualFriday = {}  # Are we on friday mode? (manual)
-    missprobability = {} # Probability to miss a duck when shooting
-    week = {}          # Scores for the week
-    channelweek = {}   # Saved scores for the week
-    leader = {}        # Who is the leader for the week?
-    reloading = {}     # Who is currently reloading?
-    reloadtime = {}    # Time to reload after shooting (in seconds)
+    missprobability = {}  # Probability to miss a duck when shooting
+    week = {}  # Scores for the week
+    channelweek = {}  # Saved scores for the week
+    leader = {}  # Who is the leader for the week?
+    reloading = {}  # Who is currently reloading?
+    reloadtime = {}  # Time to reload after shooting (in seconds)
     duck_type = {}
 
     # Does a duck needs to be launched?
@@ -86,17 +90,16 @@ class DuckHunt(callbacks.Plugin):
     debug = 0
 
     # Other params
-    perfectbonus = 5 # How many extra-points are given when someones does a perfect hunt?
-    toplist = 5      # How many high{scores|times} are displayed by default?
-    dow = int(time.strftime("%u")) # Day of week
-    woy = int(time.strftime("%V")) # Week of year
+    perfectbonus = 5  # How many extra-points are given when someones does a perfect hunt?
+    toplist = 5  # How many high{scores|times} are displayed by default?
+    dow = int(time.strftime("%u"))  # Day of week
+    woy = int(time.strftime("%V"))  # Week of year
     year = time.strftime("%Y")
     dayname = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Caturday', 'Saturday', 'Sunday']
 
     def _unpingatize(self, str1):
-        if len(str1)>1:
-            #str1="xx\x0313"+str1+"\x03xx"
-            str1="xx"+str1+"xx"
+        if len(str1) > 1:
+            str1 = "xx" + str1 + "xx"
         return str1
 
     def _calc_scores(self, channel):
@@ -107,7 +110,7 @@ class DuckHunt(callbacks.Plugin):
         # scores
         # Adding current scores to the channel scores
         for player in self.scores[channel].keys():
-            if not player in self.channelscores[channel]:
+            if player not in self.channelscores[channel]:
                 # It's a new player
                 self.channelscores[channel][player] = self.scores[channel][player]
             else:
@@ -117,13 +120,13 @@ class DuckHunt(callbacks.Plugin):
         # times
         # Adding times scores to the channel scores
         for player in self.toptimes[channel].keys():
-            if not player in self.channeltimes[channel]:
+            if  player not in self.channeltimes[channel]:
                 # It's a new player
                 self.channeltimes[channel][player] = self.toptimes[channel][player]
             else:
                 # It's a player that already has a saved score
                 # And we save the time of the current hunt if it's better than it's previous time
-                if(self.toptimes[channel][player] < self.channeltimes[channel][player]):
+                if (self.toptimes[channel][player] < self.channeltimes[channel][player]):
                     self.channeltimes[channel][player] = self.toptimes[channel][player]
 
         # worst times
@@ -135,12 +138,12 @@ class DuckHunt(callbacks.Plugin):
             else:
                 # It's a player that already has a saved score
                 # And we save the time of the current hunt if it's worst than it's previous time
-                if(self.worsttimes[channel][player] > self.channelworsttimes[channel][player]):
+                if self.worsttimes[channel][player] > self.channelworsttimes[channel][player]:
                     self.channelworsttimes[channel][player] = self.worsttimes[channel][player]
 
         # week scores
         for player in self.scores[channel].keys():
-            #FIXME: If the hunt starts a day and ends the day after, this will produce an error:
+            # FIXME: If the hunt starts a day and ends the day after, this will produce an error:
             if not player in self.channelweek[channel][self.woy][self.dow]:
                 # It's a new player
                 self.channelweek[channel][self.woy][self.dow][player] = self.scores[channel][player]
@@ -148,33 +151,30 @@ class DuckHunt(callbacks.Plugin):
                 # It's a player that already has a saved score
                 self.channelweek[channel][self.woy][self.dow][player] += self.scores[channel][player]
 
-
-
-
     def _write_scores(self, channel):
         """
         Write scores and times to the disk
         """
 
         # scores
-        outputfile = open(self.path.dirize(self.fileprefix + channel + ".scores"), "wb")
-        pickle.dump(self.channelscores[channel], outputfile)
-        outputfile.close()
+        output_file = open(self.path.dirize(self.fileprefix + channel + ".scores"), "wb")
+        pickle.dump(self.channelscores[channel], output_file)
+        output_file.close()
 
         # times
-        outputfile = open(self.path.dirize(self.fileprefix + channel + ".times"), "wb")
-        pickle.dump(self.channeltimes[channel], outputfile)
-        outputfile.close()
+        output_file = open(self.path.dirize(self.fileprefix + channel + ".times"), "wb")
+        pickle.dump(self.channeltimes[channel], output_file)
+        output_file.close()
 
         # worst times
-        outputfile = open(self.path.dirize(self.fileprefix + channel + ".worsttimes"), "wb")
-        pickle.dump(self.channelworsttimes[channel], outputfile)
-        outputfile.close()
+        output_file = open(self.path.dirize(self.fileprefix + channel + ".worsttimes"), "wb")
+        pickle.dump(self.channelworsttimes[channel], output_file)
+        output_file.close()
 
         # week scores
-        outputfile = open(self.path.dirize(self.fileprefix + channel + self.year + ".weekscores"), "wb")
-        pickle.dump(self.channelweek[channel], outputfile)
-        outputfile.close()
+        output_file = open(self.path.dirize(self.fileprefix + channel + self.year + ".weekscores"), "wb")
+        pickle.dump(self.channelweek[channel], output_file)
+        output_file.close()
 
     def _read_scores(self, channel):
         """
@@ -184,52 +184,49 @@ class DuckHunt(callbacks.Plugin):
         # scores
         if not self.channelscores.get(channel):
             if os.path.isfile(filename + ".scores"):
-                inputfile = open(filename + ".scores", "rb")
-                self.channelscores[channel] = pickle.load(inputfile)
-                inputfile.close()
+                input_file = open(filename + ".scores", "rb")
+                self.channelscores[channel] = pickle.load(input_file)
+                input_file.close()
 
         # times
         if not self.channeltimes.get(channel):
             if os.path.isfile(filename + ".times"):
-                inputfile = open(filename + ".times", "rb")
-                self.channeltimes[channel] = pickle.load(inputfile)
-                inputfile.close()
+                input_file = open(filename + ".times", "rb")
+                self.channeltimes[channel] = pickle.load(input_file)
+                input_file.close()
 
         # worst times
         if not self.channelworsttimes.get(channel):
             if os.path.isfile(filename + ".worsttimes"):
-                inputfile = open(filename + ".worsttimes", "rb")
-                self.channelworsttimes[channel] = pickle.load(inputfile)
-                inputfile.close()
+                input_file = open(filename + ".worsttimes", "rb")
+                self.channelworsttimes[channel] = pickle.load(input_file)
+                input_file.close()
 
         # week scores
         if not self.channelweek.get(channel):
             if os.path.isfile(filename + self.year + ".weekscores"):
-                inputfile = open(filename + self.year + ".weekscores", "rb")
-                self.channelweek[channel] = pickle.load(inputfile)
-                inputfile.close()
-
+                input_file = open(filename + self.year + ".weekscores", "rb")
+                self.channelweek[channel] = pickle.load(input_file)
+                input_file.close()
 
     def _initdayweekyear(self, channel):
         self.dow = int(time.strftime("%u"))  # Day of week
         self.woy = int(time.strftime("%V"))  # Week of year
-        year = time.strftime("%Y")
+        # year = time.strftime("%Y")
 
         # Init week scores
         try:
             self.channelweek[channel]
-        except:
+        except KeyError:
             self.channelweek[channel] = {}
         try:
             self.channelweek[channel][self.woy]
-        except:
+        except KeyError:
             self.channelweek[channel][self.woy] = {}
         try:
             self.channelweek[channel][self.woy][self.dow]
-        except:
+        except KeyError:
             self.channelweek[channel][self.woy][self.dow] = {}
-
-
 
     def _initthrottle(self, irc, msg, args, channel):
 
@@ -239,14 +236,13 @@ class DuckHunt(callbacks.Plugin):
             self.leader[channel] = None
 
         # autoFriday?
-        if (not self.fridayMode.get(channel)):
+        if not self.fridayMode.get(channel):
             self.fridayMode[channel] = False
 
-        if (not self.manualFriday.get(channel)):
+        if not self.manualFriday.get(channel):
             self.manualFriday[channel] = False
 
-
-        if self.registryValue('autoFriday', channel) == True:
+        if self.registryValue('autoFriday', channel):
             if int(time.strftime("%w")) == 5 and 8 < int(time.strftime("%H")) < 17:
                 self.fridayMode[channel] = True
             else:
@@ -264,7 +260,7 @@ class DuckHunt(callbacks.Plugin):
         else:
             self.reloadtime[channel] = 5
 
-        if self.fridayMode[channel] == False and self.manualFriday[channel] == False:
+        if not self.fridayMode[channel] and not self.manualFriday[channel]:
             # Init min throttle[currentChannel] and max throttle[currentChannel]
             if self.registryValue('minthrottle', channel):
                 self.minthrottle[channel] = self.registryValue('minthrottle', channel)
@@ -287,98 +283,97 @@ class DuckHunt(callbacks.Plugin):
         Starts the hunt
         """
 
-        currentChannel = msg.args[0]
-        if irc.isChannel(currentChannel):
-            if(self.started.get(currentChannel) == True):
+        current_channel = msg.args[0]
+        if irc.isChannel(current_channel):
+            if self.started.get(current_channel):
                 irc.reply("There is already a hunt right now!")
             else:
 
                 # First of all, let's read the score if needed
-                self._read_scores(currentChannel)
+                self._read_scores(current_channel)
 
-                self._initthrottle(irc, msg, args, currentChannel)
+                self._initthrottle(irc, msg, args, current_channel)
 
                 # Init saved scores
                 try:
-                    self.channelscores[currentChannel]
-                except:
-                    self.channelscores[currentChannel] = {}
+                    self.channelscores[current_channel]
+                except KeyError:
+                    self.channelscores[current_channel] = {}
 
                 # Init saved times
                 try:
-                    self.channeltimes[currentChannel]
-                except:
-                    self.channeltimes[currentChannel] = {}
+                    self.channeltimes[current_channel]
+                except KeyError:
+                    self.channeltimes[current_channel] = {}
 
                 # Init saved times
                 try:
-                    self.channelworsttimes[currentChannel]
-                except:
-                    self.channelworsttimes[currentChannel] = {}
+                    self.channelworsttimes[current_channel]
+                except KeyError:
+                    self.channelworsttimes[current_channel] = {}
 
                 # Init times
-                self.toptimes[currentChannel] = {}
-                self.worsttimes[currentChannel] = {}
+                self.toptimes[current_channel] = {}
+                self.worsttimes[current_channel] = {}
 
                 # Init bangdelay
-                self.times[currentChannel] = False
+                self.times[current_channel] = False
 
                 # Init lastSpoke
-                self.lastSpoke[currentChannel] = time.time()
+                self.lastSpoke[current_channel] = time.time()
 
                 # Reinit current hunt scores
-                if self.scores.get(currentChannel):
-                    self.scores[currentChannel] = {}
+                if self.scores.get(current_channel):
+                    self.scores[current_channel] = {}
 
                 # Reinit reloading
-                self.reloading[currentChannel] = {}
+                self.reloading[current_channel] = {}
 
                 # No duck launched
-                self.duck[currentChannel] = False
+                self.duck[current_channel] = False
 
                 # Hunt started
-                self.started[currentChannel] = True
+                self.started[current_channel] = True
 
                 # Init shoots
-                self.shoots[currentChannel] = 0
+                self.shoots[current_channel] = 0
 
                 # Init averagetime
-                self.averagetime[currentChannel] = 0
+                self.averagetime[current_channel] = 0
 
-                self.duck_type[currentChannel] = 'normal'
+                self.duck_type[current_channel] = 'normal'
 
                 # Init schedule
 
                 # First of all, stop the scheduler if it was still running
                 try:
-                    schedule.removeEvent('DuckHunt_' + currentChannel)
+                    schedule.removeEvent('DuckHunt_' + current_channel)
                 except KeyError:
                     pass
 
                 # Then restart it
                 def myEventCaller():
                     self._launchEvent(irc, msg)
+
                 try:
-                    schedule.addPeriodicEvent(myEventCaller, 5, 'DuckHunt_' + currentChannel, False)
+                    schedule.addPeriodicEvent(myEventCaller, 5, 'DuckHunt_' + current_channel, False)
                 except AssertionError:
                     pass
 
                 irc.reply("The hunt starts now!")
         else:
             irc.error('You have to be on a channel')
+
     start = wrap(start)
 
-
     def _launchEvent(self, irc, msg):
-        currentChannel = msg.args[0]
+        current_channel = msg.args[0]
         now = time.time()
-        if irc.isChannel(currentChannel):
-            if(self.started.get(currentChannel) == True):
-                if (self.duck[currentChannel] == False):
-                    if now > self.lastSpoke[currentChannel] + self.throttle[currentChannel]:
+        if irc.isChannel(current_channel):
+            if (self.started.get(current_channel) == True):
+                if (self.duck[current_channel] == False):
+                    if now > self.lastSpoke[current_channel] + self.throttle[current_channel]:
                         self._launch(irc, msg, '')
-
-
 
     def stop(self, irc, msg, args):
         """
@@ -400,6 +395,7 @@ class DuckHunt(callbacks.Plugin):
                 irc.reply('Nothing to stop: there\'s no hunt right now.')
         else:
             irc.error('You have to be on a channel')
+
     stop = wrap(stop)
 
     def fridaymode(self, irc, msg, args, channel, status):
@@ -410,10 +406,10 @@ class DuckHunt(callbacks.Plugin):
         if irc.isChannel(channel):
 
             if (status == 'status'):
-                irc.reply('Manual friday mode for ' + channel + ' is ' + str(self.manualFriday.get(channel)));
-                irc.reply('Auto friday mode for ' + channel + ' is ' + str(self.fridayMode.get(channel)));
+                irc.reply('Manual friday mode for ' + channel + ' is ' + str(self.manualFriday.get(channel)))
+                irc.reply('Auto friday mode for ' + channel + ' is ' + str(self.fridayMode.get(channel)))
             else:
-                if (self.manualFriday.get(channel) == None or self.manualFriday[channel] == False):
+                if self.manualFriday.get(channel) is None or not self.manualFriday[channel]:
                     self.manualFriday[channel] = True
                     irc.reply("Friday mode is now enabled! Shoot alllllllllllll the ducks!")
                 else:
@@ -434,8 +430,8 @@ class DuckHunt(callbacks.Plugin):
 
         currentChannel = msg.args[0]
         if irc.isChannel(currentChannel):
-            if(self.started.get(currentChannel) == True):
-                if(self.duck[currentChannel] == True):
+            if (self.started.get(currentChannel) == True):
+                if (self.duck[currentChannel] == True):
                     irc.reply("There is currently a duck! You can shoot it with the 'bang' command")
                 else:
                     irc.reply("There is no duck right now! Wait for one to be launched!")
@@ -443,8 +439,8 @@ class DuckHunt(callbacks.Plugin):
                 irc.reply("There is no hunt right now! You can start a hunt with the 'start' command")
         else:
             irc.error('You have to be on a channel')
-    launched = wrap(launched)
 
+    launched = wrap(launched)
 
 
     def score(self, irc, msg, args, nick):
@@ -460,7 +456,6 @@ class DuckHunt(callbacks.Plugin):
             except:
                 self.channelscores[currentChannel] = {}
 
-
             try:
                 irc.reply(self.channelscores[currentChannel][nick])
             except:
@@ -469,7 +464,6 @@ class DuckHunt(callbacks.Plugin):
             irc.error('You have to be on a channel')
 
     score = wrap(score, ['nick'])
-
 
 
     def mergescores(self, irc, msg, args, channel, nickto, nickfrom):
@@ -518,7 +512,6 @@ class DuckHunt(callbacks.Plugin):
     mergescores = wrap(mergescores, ['channel', 'nick', 'nick', 'admin'])
 
 
-
     def mergetimes(self, irc, msg, args, channel, nickto, nickfrom):
         """
         [<channel>] <nickto> <nickfrom>
@@ -554,7 +547,6 @@ class DuckHunt(callbacks.Plugin):
     mergetimes = wrap(mergetimes, ['channel', 'nick', 'nick', 'admin'])
 
 
-
     def rmtime(self, irc, msg, args, channel, nick):
         """
         [<channel>] <nick>
@@ -571,7 +563,6 @@ class DuckHunt(callbacks.Plugin):
             irc.error('Are you sure ' + str(channel) + ' is a channel?')
 
     rmtime = wrap(rmtime, ['channel', 'nick', 'admin'])
-
 
 
     def rmscore(self, irc, msg, args, channel, nick):
@@ -596,8 +587,6 @@ class DuckHunt(callbacks.Plugin):
     rmscore = wrap(rmscore, ['channel', 'nick', 'admin'])
 
 
-
-
     def dayscores(self, irc, msg, args, channel):
         """
         [<channel>]
@@ -617,9 +606,10 @@ class DuckHunt(callbacks.Plugin):
                     if self.channelweek[channel][week].get(day):
                         # Getting all scores, to get the winner of the week
                         msgstring = ''
-                        scores = sorted(self.channelweek[channel][week][day].iteritems(), key=lambda (k,v):(v,k), reverse=True)
+                        scores = sorted(self.channelweek[channel][week][day].iteritems(), key=lambda (k, v): (v, k),
+                                        reverse=True)
                         for item in scores:
-                            msgstring +=  self._unpingatize( item[0]) +  ": "+ str(item[1]) + " | "
+                            msgstring += self._unpingatize(item[0]) + ": " + str(item[1]) + " | "
 
                         if msgstring != "":
                             irc.reply("Scores for today: " + msgstring)
@@ -633,8 +623,8 @@ class DuckHunt(callbacks.Plugin):
                 irc.reply("There aren't any day scores for this channel yet.")
         else:
             irc.reply("Are you sure this is a channel?")
-    dayscores = wrap(dayscores, ['channel'])
 
+    dayscores = wrap(dayscores, ['channel'])
 
 
     def weekscores(self, irc, msg, args, week, nick, channel):
@@ -658,11 +648,13 @@ class DuckHunt(callbacks.Plugin):
                     if not nick:
                         msgstring = ''
                         # for each day of week
-                        for i in (1,2,3,4,5,6,7):
+                        for i in (1, 2, 3, 4, 5, 6, 7):
                             if self.channelweek[channel][week].get(i):
                                 # Getting winner of the day
-                                winnernick, winnerscore = max(self.channelweek[channel][week][i].iteritems(), key=lambda (k,v):(v,k))
-                                msgstring += self.dayname[i - 1] + ": " + self._unpingatize(winnernick) + "x ("+ str(winnerscore) + ") | "
+                                winnernick, winnerscore = max(self.channelweek[channel][week][i].iteritems(),
+                                                              key=lambda (k, v): (v, k))
+                                msgstring += self.dayname[i - 1] + ": " + self._unpingatize(winnernick) + "x (" + str(
+                                    winnerscore) + ") | "
 
                                 # Getting all scores, to get the winner of the week
                                 for player in self.channelweek[channel][week][i].keys():
@@ -671,12 +663,10 @@ class DuckHunt(callbacks.Plugin):
                                     except:
                                         weekscores[player] = self.channelweek[channel][week][i][player]
 
-
-
                         if msgstring != "":
                             irc.reply("Scores for week " + str(week) + ": " + msgstring)
                             # Who's the winner at this point?
-                            winnernick, winnerscore = max(weekscores.iteritems(), key=lambda (k,v):(v,k))
+                            winnernick, winnerscore = max(weekscores.iteritems(), key=lambda (k, v): (v, k))
                             irc.reply("Leader: x%sx with %i points." % (self._unpingatize(winnernick), winnerscore))
 
                         else:
@@ -685,10 +675,11 @@ class DuckHunt(callbacks.Plugin):
                         # Showing the scores of <nick>
                         msgstring = ''
                         total = 0
-                        for i in (1,2,3,4,5,6,7):
+                        for i in (1, 2, 3, 4, 5, 6, 7):
                             if self.channelweek[channel][week].get(i):
                                 if self.channelweek[channel][week][i].get(nick):
-                                    msgstring += self.dayname[i - 1] + ": "+ str(self.channelweek[channel][week][i].get(nick)) + " | "
+                                    msgstring += self.dayname[i - 1] + ": " + str(
+                                        self.channelweek[channel][week][i].get(nick)) + " | "
                                     total += self.channelweek[channel][week][i].get(nick)
 
                         if msgstring != "":
@@ -704,8 +695,8 @@ class DuckHunt(callbacks.Plugin):
                 irc.reply("There aren't any week scores for this channel yet.")
         else:
             irc.reply("Are you sure this is a channel?")
-    weekscores = wrap(weekscores, [optional('int'), optional('nick'), 'channel'])
 
+    weekscores = wrap(weekscores, [optional('int'), optional('nick'), 'channel'])
 
 
     def listscores(self, irc, msg, args, size, channel):
@@ -730,14 +721,14 @@ class DuckHunt(callbacks.Plugin):
                 listsize = size
 
             # Sort the scores (reversed: the higher the better)
-            scores = sorted(self.channelscores[channel].iteritems(), key=lambda (k,v):(v,k), reverse=True)
+            scores = sorted(self.channelscores[channel].iteritems(), key=lambda (k, v): (v, k), reverse=True)
             del scores[listsize:]
 
             msgstring = ""
             for item in scores:
                 # Why do we show the nicks as xnickx?
                 # Just to prevent everyone that has ever played a hunt in the channel to be pinged every time anyone asks for the score list
-                msgstring +=  self._unpingatize(item[0]) + ": "+ str(item[1]) + " | "
+                msgstring += self._unpingatize(item[0]) + ": " + str(item[1]) + " | "
             if msgstring != "":
                 irc.reply("\_o< ~ DuckHunt top-" + str(listsize) + " scores for " + channel + " ~ >o_/")
                 irc.reply(msgstring)
@@ -745,6 +736,7 @@ class DuckHunt(callbacks.Plugin):
                 irc.reply("There aren't any scores for this channel yet.")
         else:
             irc.reply("Are you sure this is a channel?")
+
     listscores = wrap(listscores, [optional('int'), 'channel'])
 
 
@@ -766,6 +758,7 @@ class DuckHunt(callbacks.Plugin):
 
         else:
             irc.reply("Are you sure this is a channel?")
+
     total = wrap(total, ['channel'])
 
 
@@ -796,21 +789,20 @@ class DuckHunt(callbacks.Plugin):
                 listsize = size
 
             # Sort the times (not reversed: the lower the better)
-            times = sorted(self.channeltimes[channel].iteritems(), key=lambda (k,v):(v,k), reverse=False)
+            times = sorted(self.channeltimes[channel].iteritems(), key=lambda (k, v): (v, k), reverse=False)
             del times[listsize:]
 
             msgstring = ""
             for item in times:
                 # Same as in listscores for the xnickx
-                msgstring += self._unpingatize( item[0]) + ": "+ str(round(item[1],2)) + " | "
+                msgstring += self._unpingatize(item[0]) + ": " + str(round(item[1], 2)) + " | "
             if msgstring != "":
                 irc.reply("\_o< ~ DuckHunt top-" + str(listsize) + " times for " + channel + " ~ >o_/")
                 irc.reply(msgstring)
             else:
                 irc.reply("There aren't any best times for this channel yet.")
 
-
-            times = sorted(self.channelworsttimes[channel].iteritems(), key=lambda (k,v):(v,k), reverse=True)
+            times = sorted(self.channelworsttimes[channel].iteritems(), key=lambda (k, v): (v, k), reverse=True)
             del times[listsize:]
 
             msgstring = ""
@@ -819,7 +811,7 @@ class DuckHunt(callbacks.Plugin):
                 #msgstring += "x" + item[0] + "x: "+ time.strftime('%H:%M:%S', time.gmtime(item[1])) + ", "
                 roundseconds = round(item[1])
                 delta = datetime.timedelta(seconds=roundseconds)
-                msgstring += self._unpingatize( item[0]) + ": " + str(delta) + " | "
+                msgstring += self._unpingatize(item[0]) + ": " + str(delta) + " | "
             if msgstring != "":
                 irc.reply("\_o< ~ DuckHunt top-" + str(listsize) + " longest times for " + channel + " ~ >o_/")
                 irc.reply(msgstring)
@@ -830,8 +822,8 @@ class DuckHunt(callbacks.Plugin):
 
         else:
             irc.reply("Are you sure this is a channel?")
-    listtimes = wrap(listtimes, [optional('int'), 'channel'])
 
+    listtimes = wrap(listtimes, [optional('int'), 'channel'])
 
 
     def dbg(self, irc, msg, args):
@@ -842,20 +834,23 @@ class DuckHunt(callbacks.Plugin):
         if (self.debug):
             if irc.isChannel(currentChannel):
                 self._launch(irc, msg, '')
+
     dbg = wrap(dbg)
 
     def befree(self, irc, msg, args):
         """
         Saves the duck!
         """
-        self._process_shot( irc, msg, args, 'save')
+        self._process_shot(irc, msg, args, 'save')
+
     befree = wrap(befree)
 
     def bang(self, irc, msg, args):
         """
         Shoots the duck!
         """
-        self._process_shot( irc, msg, args, 'kill')
+        self._process_shot(irc, msg, args, 'kill')
+
     bang = wrap(bang)
 
     def _increment_score(self, currentChannel, msg, bangdelay):
@@ -873,7 +868,7 @@ class DuckHunt(callbacks.Plugin):
         # Now save the bang delay for the player (if it's quicker than it's previous bangdelay)
         try:
             previoustime = self.toptimes[currentChannel][msg.nick]
-            if(bangdelay < previoustime):
+            if (bangdelay < previoustime):
                 self.toptimes[currentChannel][msg.nick] = bangdelay
         except KeyError:
             self.toptimes[currentChannel][msg.nick] = bangdelay
@@ -898,122 +893,121 @@ class DuckHunt(callbacks.Plugin):
                 self.scores[currentChannel][msg.nick] = -1
 
     def _process_shot(self, irc, msg, args, player_action):
-        currentChannel = msg.args[0]
+        current_channel = msg.args[0]
 
-        if not irc.isChannel(currentChannel):
+        if not irc.isChannel(current_channel):
             irc.error('You have to be on a channel')
             return
 
-        if not self.started.get(currentChannel):
+        if not self.started.get(current_channel):
             irc.reply("There is no hunt right now! Ask an op to start a hunt!")
             return
 
+        if self.is_practice_duck[current_channel]:
+            irc.reply("\_x<  yay %s! you got the practice duck!!!" % (self._unpingatize(msg.nick)))
+            self.is_practice_duck[current_channel] = False
+            return
+
+
         # bangdelay: how much time between the duck was launched and this shot?
-        if self.times[currentChannel]:
-            bangdelay = time.time() - self.times[currentChannel]
+        if self.times[current_channel]:
+            bangdelay = time.time() - self.times[current_channel]
         else:
             bangdelay = False
 
         # Is the player reloading?
-        if (self.reloading[currentChannel].get(msg.nick)
-            and time.time() - self.reloading[currentChannel][msg.nick] < self.reloadtime[currentChannel]):
+        if (self.reloading[current_channel].get(msg.nick)
+            and time.time() - self.reloading[current_channel][msg.nick] < self.reloadtime[current_channel]):
             irc.reply("%s, you are reloading... (Reloading takes %i seconds)"
-                      % (self._unpingatize(msg.nick), self.reloadtime[currentChannel]))
+                      % (self._unpingatize(msg.nick), self.reloadtime[current_channel]))
             return 0
 
         # This player is now reloading
-        self.reloading[currentChannel][msg.nick] = time.time()
+        self.reloading[current_channel][msg.nick] = time.time()
 
         # There was a duck
-        if self.duck[currentChannel]:
-
-            if self.duck_type[currentChannel] == 'practice':
-                irc.reply("\_x<  yay %s! you got the practice duck!!!" % (self._unpingatize(msg.nick)))
-                self.duck[currentChannel] = False
-                self.lastSpoke[currentChannel] = time.time()
-                return
+        if self.duck[current_channel]:
 
             # Did the player miss it?
-            if random.random() < self.missprobability[currentChannel]:
+            if random.random() < self.missprobability[current_channel]:
                 irc.reply("%s, you missed the duck!" % (self._unpingatize(msg.nick)))
             else:
-                if self.duck_type[currentChannel] == 'normal' and player_action == 'save':
-                    self._increment_score(currentChannel, msg, bangdelay)
+                if self.duck_type[current_channel] == 'normal' and player_action == 'save':
+                    self._increment_score(current_channel, msg, bangdelay)
                     irc.reply("(\_o<) rescued and put on a nice farm to live out its days peacefully"
                               "  %s: %i (%.2f seconds)"
-                              % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
+                              % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
 
-                if self.duck_type[currentChannel] == 'normal' and player_action == 'kill':
-                    if self.registryValue('evilMode', currentChannel):
-                        self._decrement_score(currentChannel, msg)
+                if self.duck_type[current_channel] == 'normal' and player_action == 'kill':
+                    if self.registryValue('evilMode', current_channel):
+                        self._decrement_score(current_channel, msg)
                     else:
-                        self._increment_score(currentChannel, msg)
+                        self._increment_score(current_channel, msg, bangdelay)
                     irc.reply("\_x  you killed the poor duck :("
                               "  %s: %i (%.2f seconds)"
-                              % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
-                if self.duck_type[currentChannel] == 'evil' and player_action == 'kill':
-                    self._increment_score(currentChannel, msg, bangdelay)
+                              % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
+                if self.duck_type[current_channel] == 'evil' and player_action == 'kill':
+                    self._increment_score(current_channel, msg, bangdelay)
                     irc.reply("(\_.o<) you saved the duck but it came back and bit your groin"
                               "  %s: %i (%.2f seconds)"
-                              % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
-                if self.duck_type[currentChannel] == 'evil' and player_action == 'save':
-                    self._decrement_score(currentChannel, msg)
+                              % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
+                if self.duck_type[current_channel] == 'evil' and player_action == 'save':
+                    self._decrement_score(current_channel, msg)
                     irc.reply("\_.x< you killed the evil duck :D"
                               "  %s: %i (%.2f seconds)"
-                              % (msg.nick,  self.scores[currentChannel][msg.nick], bangdelay))
+                              % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
 
-                self.duck[currentChannel] = False
+                self.duck[current_channel] = False
 
                 # Reset the basetime for the waiting time before the next duck
-                self.lastSpoke[currentChannel] = time.time()
+                self.lastSpoke[current_channel] = time.time()
 
-                if self.registryValue('ducks', currentChannel):
-                    maxShoots = self.registryValue('ducks', currentChannel)
+                if self.registryValue('ducks', current_channel):
+                    maxShoots = self.registryValue('ducks', current_channel)
                 else:
                     maxShoots = 10
 
                 # End of Hunt
-                if self.shoots[currentChannel] == maxShoots:
+                if self.shoots[current_channel] == maxShoots:
                     self._end(irc, msg, args)
 
                     # If autorestart is enabled, we restart a hunt automatically!
-                    if self.registryValue('autoRestart', currentChannel):
+                    if self.registryValue('autoRestart', current_channel):
                         # This code shouldn't be here
-                        self.started[currentChannel] = True
-                        self._initthrottle(irc, msg, args, currentChannel)
-                        if self.scores.get(currentChannel):
-                            self.scores[currentChannel] = {}
-                        if self.reloading.get(currentChannel):
-                            self.reloading[currentChannel] = {}
+                        self.started[current_channel] = True
+                        self._initthrottle(irc, msg, args, current_channel)
+                        if self.scores.get(current_channel):
+                            self.scores[current_channel] = {}
+                        if self.reloading.get(current_channel):
+                            self.reloading[current_channel] = {}
 
-                        self.averagetime[currentChannel] = 0
+                        self.averagetime[current_channel] = 0
 
         # There was no duck or the duck has already been shot
         else:
-            self._decrement_score(currentChannel, msg)
+            self._decrement_score(current_channel, msg)
 
             # Base message
             message = 'There was no duck!'
 
             # Adding additional message if kick
-            if self.registryValue('kickMode', currentChannel) and irc.nick in irc.state.channels[currentChannel].ops:
+            if self.registryValue('kickMode', current_channel) and irc.nick in irc.state.channels[current_channel].ops:
                 message += ' You just shot yourself!'
 
             # Adding nick and score
-            message += " %s: %i" % (self._unpingatize(msg.nick), self.scores[currentChannel][msg.nick])
+            message += " %s: %i" % (self._unpingatize(msg.nick), self.scores[current_channel][msg.nick])
 
             # If we were able to have a bangdelay (ie: a duck was launched before someone did bang)
             if (bangdelay):
                 # Adding time
-                message += " (" + str(round(bangdelay,2)) + " seconds)"
+                message += " (" + str(round(bangdelay, 2)) + " seconds)"
 
             # If kickMode is enabled for this channel, and the bot have op capability, let's kick!
-            if self.registryValue('kickMode', currentChannel) and irc.nick in irc.state.channels[currentChannel].ops:
-                irc.queueMsg(ircmsgs.kick(currentChannel, msg.nick, message))
+            if self.registryValue('kickMode', current_channel) and irc.nick in irc.state.channels[current_channel].ops:
+                irc.queueMsg(ircmsgs.kick(current_channel, msg.nick, message))
             else:
                 # Else, just say it
                 irc.reply(message)
-
 
     def _end(self, irc, msg, args):
         """ 
@@ -1030,7 +1024,6 @@ class DuckHunt(callbacks.Plugin):
         except:
             self.channelscores[currentChannel] = {}
 
-
         if not self.registryValue('autoRestart', currentChannel):
             irc.reply("The hunt stops now!")
 
@@ -1038,7 +1031,7 @@ class DuckHunt(callbacks.Plugin):
         if (self.scores.get(currentChannel)):
 
             # Getting winner
-            winnernick, winnerscore = max(self.scores.get(currentChannel).iteritems(), key=lambda (k,v):(v,k))
+            winnernick, winnerscore = max(self.scores.get(currentChannel).iteritems(), key=lambda (k, v): (v, k))
             if self.registryValue('ducks', currentChannel):
                 maxShoots = self.registryValue('ducks', currentChannel)
             else:
@@ -1046,7 +1039,8 @@ class DuckHunt(callbacks.Plugin):
 
             # Is there a perfect?
             if (winnerscore == maxShoots):
-                irc.reply("\o/ %s: %i ducks out of %i: perfect!!! +%i \o/" % (self._unpingatize(winnernick), winnerscore, maxShoots, self.perfectbonus))
+                irc.reply("\o/ %s: %i ducks out of %i: perfect!!! +%i \o/" % (
+                self._unpingatize(winnernick), winnerscore, maxShoots, self.perfectbonus))
                 self.scores[currentChannel][winnernick] += self.perfectbonus
             else:
                 # Showing scores
@@ -1056,13 +1050,11 @@ class DuckHunt(callbacks.Plugin):
                 #irc.reply(sorted(self.scores.get(currentChannel).iteritems(), key=lambda (k,v):(v,k), reverse=True))
                 recentscoreoutput = "";
 
-                recentscores = sorted(iter(self.scores.get(currentChannel).items()), key=lambda k_v4:(k_v4[1],k_v4[0]), reverse=True)
+                recentscores = sorted(iter(self.scores.get(currentChannel).items()),
+                                      key=lambda k_v4: (k_v4[1], k_v4[0]), reverse=True)
 
                 for item in recentscores:
-
-                    recentscoreoutput+= self._unpingatize( item[0]) + ": "+ str(item[1]) + " | "
-
-
+                    recentscoreoutput += self._unpingatize(item[0]) + ": " + str(item[1]) + " | "
 
                 irc.reply(recentscoreoutput)
 
@@ -1071,18 +1063,21 @@ class DuckHunt(callbacks.Plugin):
             channelbestnick = None
             channelbesttime = None
             if self.channeltimes.get(currentChannel):
-                channelbestnick, channelbesttime = min(self.channeltimes.get(currentChannel).iteritems(), key=lambda (k,v):(v,k))
+                channelbestnick, channelbesttime = min(self.channeltimes.get(currentChannel).iteritems(),
+                                                       key=lambda (k, v): (v, k))
 
             # Showing best time
             recordmsg = ''
             if (self.toptimes.get(currentChannel)):
-                key,value = min(self.toptimes.get(currentChannel).iteritems(), key=lambda (k,v):(v,k))
+                key, value = min(self.toptimes.get(currentChannel).iteritems(), key=lambda (k, v): (v, k))
                 if (channelbesttime and value < channelbesttime):
-                    recordmsg = '. This is the new record for this channel! (previous record was held by ' + self._unpingatize(channelbestnick) + ' with ' + str(round(channelbesttime,2)) +  ' seconds)'
+                    recordmsg = '. This is the new record for this channel! (previous record was held by ' + self._unpingatize(
+                        channelbestnick) + ' with ' + str(round(channelbesttime, 2)) + ' seconds)'
                 else:
                     try:
-                        if(value < self.channeltimes[currentChannel][key]):
-                            recordmsg = ' (this is your new record in this channel! Your previous record was ' + str(round(self.channeltimes[currentChannel][key],2)) + ')'
+                        if (value < self.channeltimes[currentChannel][key]):
+                            recordmsg = ' (this is your new record in this channel! Your previous record was ' + str(
+                                round(self.channeltimes[currentChannel][key], 2)) + ')'
                     except:
                         recordmsg = ''
 
@@ -1092,19 +1087,22 @@ class DuckHunt(callbacks.Plugin):
             channelworstnick = None
             channelworsttime = None
             if self.channelworsttimes.get(currentChannel):
-                channelworstnick, channelworsttime = max(self.channelworsttimes.get(currentChannel).iteritems(), key=lambda (k,v):(v,k))
+                channelworstnick, channelworsttime = max(self.channelworsttimes.get(currentChannel).iteritems(),
+                                                         key=lambda (k, v): (v, k))
 
 
             # Showing worst time
             recordmsg = ''
             if (self.worsttimes.get(currentChannel)):
-                key,value = max(self.worsttimes.get(currentChannel).iteritems(), key=lambda (k,v):(v,k))
+                key, value = max(self.worsttimes.get(currentChannel).iteritems(), key=lambda (k, v): (v, k))
                 if (channelworsttime and value > channelworsttime):
-                    recordmsg = '. This is the new longest time for this channel! (previous longest time was held by ' + self._unpingatize(channelworstnick) + ' with ' + str(round(channelworsttime,2)) +  ' seconds)'
+                    recordmsg = '. This is the new longest time for this channel! (previous longest time was held by ' + self._unpingatize(
+                        channelworstnick) + ' with ' + str(round(channelworsttime, 2)) + ' seconds)'
                 else:
                     try:
-                        if(value > self.channelworsttimes[currentChannel][key]):
-                            recordmsg = ' (this is your new longest time in this channel! Your previous longest time was ' + str(round(self.channelworsttimes[currentChannel][key],2)) + ')'
+                        if (value > self.channelworsttimes[currentChannel][key]):
+                            recordmsg = ' (this is your new longest time in this channel! Your previous longest time was ' + str(
+                                round(self.channelworsttimes[currentChannel][key], 2)) + ')'
                     except:
                         recordmsg = ''
 
@@ -1126,7 +1124,7 @@ class DuckHunt(callbacks.Plugin):
                 if self.channelweek[currentChannel].get(self.woy):
                     msgstring = ''
                     # for each day of week
-                    for i in (1,2,3,4,5,6,7):
+                    for i in (1, 2, 3, 4, 5, 6, 7):
                         if self.channelweek[currentChannel][self.woy].get(i):
                             # Getting all scores, to get the winner of the week
                             for player in self.channelweek[currentChannel][self.woy][i].keys():
@@ -1134,12 +1132,14 @@ class DuckHunt(callbacks.Plugin):
                                     weekscores[player] += self.channelweek[currentChannel][self.woy][i][player]
                                 except:
                                     weekscores[player] = self.channelweek[currentChannel][self.woy][i][player]
-                    winnernick, winnerscore = max(weekscores.iteritems(), key=lambda (k,v):(v,k))
+                    winnernick, winnerscore = max(weekscores.iteritems(), key=lambda (k, v): (v, k))
                     if (winnernick != self.leader[currentChannel]):
                         if self.leader[currentChannel] != None:
-                            irc.reply("%s took the lead for the week over %s with %i points." % (self._unpingatize(winnernick), self._unpingatize(self.leader[currentChannel]), winnerscore))
+                            irc.reply("%s took the lead for the week over %s with %i points." % (
+                            self._unpingatize(winnernick), self._unpingatize(self.leader[currentChannel]), winnerscore))
                         else:
-                            irc.reply("%s has the lead for the week with %i points." % (self._unpingatize(winnernick), winnerscore))
+                            irc.reply("%s has the lead for the week with %i points." % (
+                            self._unpingatize(winnernick), winnerscore))
                         self.leader[currentChannel] = winnernick
 
 
@@ -1167,27 +1167,24 @@ class DuckHunt(callbacks.Plugin):
         """
         Launch a practice duck
         """
-        currentChannel = msg.args[0]
-        if not irc.isChannel(currentChannel):
+        current_channel = msg.args[0]
+        if not irc.isChannel(current_channel):
             irc.error('You have to be on a channel')
             return
-        if currentChannel not in self.started or not self.started[currentChannel]:
+        if current_channel not in self.started or not self.started[current_channel]:
             irc.reply("The hunt has not started yet!")
             return
-        if self.duck[currentChannel]:
+        if self.duck[current_channel]:
             irc.reply("Already a duck")
             return
-       # Store the time when the duck has been launched
-        self.times[currentChannel] = time.time()
+            # Store the time when the duck has been launched
+        self.times[current_channel] = time.time()
 
         # Store the fact that there's a duck now
-        self.duck[currentChannel] = True
-        self.duck_type[currentChannel] = 'practice'
+        self.is_practice_duck[current_channel] = True
         # Send message directly (instead of queuing it with irc.reply)
-        irc.reply( '\_o< quack!  (practice... say ".bang!")', currentChannel)
+        irc.reply('\_o< quack!  (practice... say ".bang!")', current_channel)
 
-        # Define a new throttle[currentChannel] for the next launch
-        self.throttle[currentChannel] = random.randint(self.minthrottle[currentChannel], self.maxthrottle[currentChannel])
 
     practiceduck = wrap(practiceduck)
 
@@ -1219,7 +1216,7 @@ class DuckHunt(callbacks.Plugin):
 
         self.duck_type[currentChannel] = "normal"
         if self.registryValue('evilMode', currentChannel):
-            self.duck_type[currentChannel] = random.choice('normal', 'evil')
+            self.duck_type[currentChannel] = random.choice(('normal', 'evil'))
             if self.duck_type[currentChannel] == "evil":
                 current_duck = current_duck.replace('o', 'o.')
 
@@ -1228,17 +1225,13 @@ class DuckHunt(callbacks.Plugin):
         irc.sendMsg(ircmsgs.privmsg(currentChannel, (current_duck)))
 
         # Define a new throttle[currentChannel] for the next launch
-        self.throttle[currentChannel] = random.randint(self.minthrottle[currentChannel], self.maxthrottle[currentChannel])
+        self.throttle[currentChannel] = random.randint(self.minthrottle[currentChannel],
+                                                       self.maxthrottle[currentChannel])
 
         try:
             self.shoots[currentChannel] += 1
-        except:
+        except KeyError:
             self.shoots[currentChannel] = 1
-
-
-
-
-
 
 
 Class = DuckHunt
