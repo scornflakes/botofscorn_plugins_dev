@@ -1225,7 +1225,7 @@ class DuckHunt(callbacks.Plugin):
         else:
             self.duck_type[currentChannel] = "normal"
         # Send message directly (instead of queuing it with irc.reply)
-        irc.sendMsg(ircmsgs.privmsg(currentChannel, current_duck))
+        irc.sendMsg(ircmsgs.privmsg(currentChannel, (current_duck)))
 
         # Define a new throttle[currentChannel] for the next launch
         self.throttle[currentChannel] = random.randint(self.minthrottle[currentChannel], self.maxthrottle[currentChannel])
