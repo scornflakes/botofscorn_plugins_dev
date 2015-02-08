@@ -927,6 +927,11 @@ class DuckHunt(callbacks.Plugin):
         # There was a duck
         if self.duck[currentChannel]:
 
+            if self.duck_type[currentChannel]=='practice':
+                irc.reply("\_x<  yay %s! you got the practice duck!!!" % (self._unpingatize(msg.nick)))
+                self._increment_score(currentChannel, msg, bangdelay)
+                self.duck[currentChannel] = False
+
             # Did the player miss it?
             if random.random() < self.missprobability[currentChannel]:
                 irc.reply("%s, you missed the duck!" % (self._unpingatize(msg.nick)))
@@ -984,7 +989,7 @@ class DuckHunt(callbacks.Plugin):
 
         # There was no duck or the duck has already been shot
         else:
-            self._decrement_score()
+            self._decrement_score(currentChannel, msg)
 
             # Base message
             message = 'There was no duck!'
@@ -1158,6 +1163,10 @@ class DuckHunt(callbacks.Plugin):
         self.shoots[currentChannel] = 0
 
     def practiceduck(self, irc, msg, args):
+          """
+        Launch a practice duck
+        """
+
         self._launch(self, irc, msg, args, practiceduck=True)
 
     practiceduck = wrap(practiceduck)
