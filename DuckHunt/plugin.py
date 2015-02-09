@@ -960,7 +960,7 @@ class DuckHunt(callbacks.Plugin):
                     if self.registryValue('evilMode', current_channel):
                         self._decrement_score(current_channel, msg, self.duck_type[current_channel])
                     else:
-                        self._increment_score(current_channel, msg,self.duck_type[current_channel],  bangdelay)
+                        self._increment_score(current_channel, msg, self.duck_type[current_channel],  bangdelay)
                     irc.reply("\_x  you killed the poor duck :("
                               "  %s: %i (%.2f seconds)"
                               % (msg.nick, self.scores[current_channel][msg.nick], bangdelay))
@@ -1003,7 +1003,7 @@ class DuckHunt(callbacks.Plugin):
 
         # There was no duck or the duck has already been shot
         else:
-            self._decrement_score(current_channel, msg)
+            self._decrement_score(current_channel, msg, self.duck_type[current_channel])
 
             # Base message
             message = 'There was no duck!'
