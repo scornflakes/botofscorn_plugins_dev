@@ -1228,15 +1228,17 @@ class DuckHunt(callbacks.Plugin):
         self.duck[currentChannel] = True
 
         # Set duck replies
-        quack = ['\_o< A wild duck appears!', '\_o< quack!', '\_o< honk!', '\_o< kvaak!']
+        # quack = ['\_o< A wild duck appears!', '\_o< quack!', '\_o< honk!', '\_o< kvaak!']
+        # quack = ['\_o< quack!', '\_o< honk!', '\_o< kvaak!']
 
-        current_duck = random.choice(quack)
+        current_duck = random.choice(self.registryValue('GoodDuckIcons', currentChannel).split(','))
 
         self.duck_type[currentChannel] = "normal"
         if self.registryValue('evilMode', currentChannel) \
                 and random.random() < self.registryValue('evilDuckProbability', currentChannel):
             self.duck_type[currentChannel] = "evil"
-            current_duck = current_duck.replace('o<', '.o<')
+            current_duck = random.choice(self.registryValue('BadDuckIcons', currentChannel).split(','))
+
 
 
         # Send message directly (instead of queuing it with irc.reply)

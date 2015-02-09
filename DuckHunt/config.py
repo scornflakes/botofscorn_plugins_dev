@@ -84,4 +84,12 @@ conf.registerChannelValue(DuckHunt, 'controlOpsOnly',
 
 conf.registerChannelValue(DuckHunt, 'ops',
      registry.String('', """Comma separated list of who can control duckhunt"""))
+
+conf.registerChannelValue(DuckHunt, 'GoodDuckIcons',
+     registry.String('\_o< quack!,\_o< honk!,\_o< kvaak!', """Comma separated list of duck icons"""))
+conf.registerChannelValue(DuckHunt, 'BadDuckIcons',
+     #registry.String('quack! \_o<,honk! \_o<, kvaak! \_o<', """Comma separated list of duck icons"""))
+    registry.String('\_.o< quack!,\_.o< honk!,\_.o< kvaak!', """Comma separated list of duck icons"""))
+
+
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
