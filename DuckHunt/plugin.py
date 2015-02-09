@@ -896,7 +896,7 @@ class DuckHunt(callbacks.Plugin):
         except KeyError:
             self.worsttimes[currentChannel][msg.nick] = bangdelay
 
-    def _decrement_score(self, currentChannel, duck_type, msg):
+    def _decrement_score(self, currentChannel, msg, duck_type ):
         pointval = self.registryValue('goodDuckPointValue', currentChannel) * -1
         if duck_type == 'evil':
             pointval = self.registryValue('evilDuckPointValue', currentChannel) * -1
