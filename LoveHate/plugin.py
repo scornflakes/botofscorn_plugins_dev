@@ -61,8 +61,8 @@ class LoveHate(callbacks.Plugin):
     def _unpingatize(self, str1):
 	if len(str1)>1:
 	#str1="xx\x0313"+str1+"\x03xx"
-	str1="xx"+str1+"xx"
-	return str1
+		str1="xx"+str1+"xx"
+		return str1
        
     def __init__(self, irc):
         self.__parent = super(LoveHate, self)
