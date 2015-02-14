@@ -442,7 +442,8 @@ class DuckHunt(callbacks.Plugin):
         if irc.isChannel(currentChannel):
             if (self.started.get(currentChannel) == True):
                 if (self.duck[currentChannel] == True):
-                    irc.reply("There is currently a duck! You can shoot it with the 'bang' command")
+                    irc.reply("There is currently a {} duck! You can shoot it with the 'bang' command"
+                              .format(self.duck_type[currentChannel]))
                 else:
                     irc.reply("There is no duck right now! Wait for one to be launched!")
             else:
