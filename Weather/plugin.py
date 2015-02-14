@@ -409,10 +409,15 @@ class Weather(callbacks.Plugin):
                     resp.append('Pressure: %s.' % ircutils.bold(info['Pressure']))
                 resp.append(ircutils.bold(ircutils.mircColor(severe, '4')))
                 resp = map(utils.web.htmlToText, resp)
-                irc.reply(' '.join(resp).decode('latin1').encode('utf-8'), prefixNick=False, private=True)
+                irc.reply(self.remove_non_ascii(' '.join(resp)), prefixNick=False, private=True)
             else:
                 Weather._noLocation()
         wunder = wrap(wunder, ['text'])
+        
+        @classmethod
+        def remove_non_ascii(line):
+            output = ''.join([x for x in line if ord(x) < 128])
+            return output.replace(u'\u2013', '-').replace(u'\u2019', '').replace(u'\u2014', '')
 
         _rsswunderUrl = 'http://www.wunderground.com/cgi-bin/findweather/' \
                         'getForecast?query=%s'
