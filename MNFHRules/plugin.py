@@ -172,7 +172,7 @@ class MNFHRules(callbacks.Plugin):
         """ test op command
         """
         current_channel = msg.args[0]
-        irc.reply(irc.state.channels[current_channel].ops)
+        irc.reply(irc.state.channels[current_channel].modes)
     testops = wrap(testops)
 
     @internationalizeDocstring
