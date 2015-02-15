@@ -45,7 +45,7 @@ MNFHRules = conf.registerPlugin('MNFHRules')
 # conf.registerGlobalValue(MNFHRules, 'someConfigVariableName',
 #     registry.Boolean(False, """Help for someConfigVariableName."""))
 
-conf.registerChannelValue(DuckHunt, 'ops',
+conf.registerChannelValue(MNFHRules, 'ops',
      registry.String('', """Comma separated list of who can control duckhunt"""))
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
