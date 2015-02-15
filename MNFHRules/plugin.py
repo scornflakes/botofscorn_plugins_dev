@@ -119,7 +119,7 @@ class MNFHRules(callbacks.Plugin):
         """ lists channel ops
         """
         current_channel = msg.args[0]
-        irc.reply(("%s,. (Ignore the 'xx's) Use .callops now if there's a problem. " % self.registryValue('ops', current_channel).replace(',', 'xx, ')))
+        irc.reply(("%sxx. (Ignore the 'xx's) Use .callops now if there's a problem. " % self.registryValue('ops', current_channel).replace(',', 'xx, ')))
     oplist = wrap(oplist)
 
 
