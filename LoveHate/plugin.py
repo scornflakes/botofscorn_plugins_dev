@@ -180,7 +180,7 @@ class LoveHate(callbacks.Plugin):
                 if len(results[key]) > 1:
                     results2 = []
                     for result in results[key]:
-                        results2+=(_unpingatize(result, irc.state.channels[msg.args[0]].users),)
+                        results2+=(_unpingatize(result, irc.state.channels[msg.args[0]].users, msg.args[0]),)
                     users = ', '.join(results2[0:-1]) + ' and ' + results2[-1]
                     verb = key
                 else:
@@ -236,7 +236,7 @@ class LoveHate(callbacks.Plugin):
                 if len(results[key]) > 1:
                     results2 = []
                     for result in results[key]:
-                        results2 += (_unpingatize(result, irc.state.channels[msg.args[0]].users),)
+                        results2 += (_unpingatize(result, irc.state.channels[msg.args[0]].users, msg.args[0]),)
                     things = '; '.join(results2[0:-1]) + '; and ' + results2[-1]
                 else:
                     things = ' and '.join(results[key])
@@ -321,8 +321,8 @@ class LoveHate(callbacks.Plugin):
         return L
 
 
-def _unpingatize(str1, nicks):
-    if len(str1) > 1 and str1 in nicks:
+def _unpingatize(str1, nicks, current_channel):
+    if self.registryValue('unping', current_channel) and len(str1) > 1 and str1 in nicks:
         #str1="xx\x0313"+str1+"\x03xx"
         str1 = "xx%sxx" % str1
         return str1

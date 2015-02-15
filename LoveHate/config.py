@@ -45,5 +45,7 @@ LoveHate = conf.registerPlugin('LoveHate')
 # conf.registerGlobalValue(LoveHate, 'someConfigVariableName',
 #     registry.Boolean(False, """Help for someConfigVariableName."""))
 
+conf.registerChannelValue(MNFHRules, 'unping',
+     registry.Boolean(False, """Depingitizes users that are currently in the chan"""))
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
