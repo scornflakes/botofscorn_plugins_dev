@@ -150,6 +150,14 @@ class MNFHRules(callbacks.Plugin):
         irc.reply("\xe2\x97\x94\xcc\xaf\xe2\x97\x94 %s" % user_name)
     eyeroll = wrap(eyeroll, [optional('text')])
 
+
+    def test_ops(self, irc, msg, args):
+        """ test op command
+        """
+
+        irc.reply(irc.state.channels['#channel'].ops)
+    test_ops = wrap(test_ops)
+
     @internationalizeDocstring
     def gizoogle(self, irc, msg, args,  text):
         """
