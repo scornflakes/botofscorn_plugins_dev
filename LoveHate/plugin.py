@@ -177,11 +177,11 @@ class LoveHate(callbacks.Plugin):
         replied = False
         for key in ('love', 'hate'):
             if len(results[key]) > 0:
-                for result in results[key]:
-                    if result in irc.state.channels[channel].nicks:
-                        result = 'xx%sxx' % result
                 if len(results[key]) > 1:
-                    users = ', '.join(results[key][0:-1]) + ' and ' + results[key][-1]
+                    results2 = []
+                    for result in results[key]:
+                        result2 += _unpingatize(result, irc.state.channels[channel].nicks)
+                    users = ', '.join(results2[0:-1]) + ' and ' + results2[-1]
                     verb = key
                 else:
                     users = ' and '.join(results[key])
@@ -318,10 +318,12 @@ class LoveHate(callbacks.Plugin):
         return L
 
 
-def _unpingatize(str1):
-    if len(str1) > 1:
+def _unpingatize(str1, nicks):
+    if len(str1) > 1 and str1 in nicks:
         #str1="xx\x0313"+str1+"\x03xx"
-        str1 = "xx" + str1 + "xx"
+        str1 = "xx%sxx" % str1
+        return str1
+    else:
         return str1
 
 
