@@ -115,6 +115,23 @@ class MNFHRules(callbacks.Plugin):
     snuggle = wrap(snuggle, ['text'])
 
     @internationalizeDocstring
+    def oplist(self, irc, msg, args, user_name):
+        """ lists channel ops
+        """
+        current_channel = msg.args[0]
+        irc.reply("%s . Use .callops to if there's a problem" % self.registryValue('ops', current_channel))
+    oplist = wrap(oplist)
+
+
+    def callops(self, irc, msg, args, user_name):
+        """ lists channel ops
+        """
+        current_channel = msg.args[0]
+        irc.reply(("%s" % self.registryValue('ops', current_channel)).replace(',', ', '))
+    callops = wrap(callops)
+
+
+    @internationalizeDocstring
     def stab(self, irc, msg, args, user_name):
         """ Stab function to stab your enemies
         """
