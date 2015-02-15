@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2014, scornflakes
+# Copyright (c) 2005, James Vega
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,27 +25,46 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
 ###
 
-import supybot.conf as conf
-import supybot.registry as registry
+"""
+This plugin does weather-related stuff.  It can't change the weather, though,
+so don't get your hopes up.  We just report it.
+"""
 
-def configure(advanced):
-    # This will be called by supybot to configure this module.  advanced is
-    # a bool that specifies whether the user identified himself as an advanced
-    # user or not.  You should effect your configuration by manipulating the
-    # registry as appropriate.
-    from supybot.questions import expect, anything, something, yn
-    conf.registerPlugin('MNFHRules', True)
+import supybot
+import supybot.world as world
+
+# Use this for the version of this plugin.  You may wish to put a CVS keyword
+# in here if you're keeping the plugin in CVS or some similar system.
+__version__ = "%%VERSION%%"
+
+__author__ = supybot.authors.unknown
+
+supybot.authors.mtughan = supybot.Author('Michael Tughan', 'mtughan', 'michaelsprogramming@gmail.com')
+
+# This is a dictionary mapping supybot.Author instances to lists of
+# contributions.
+__contributors__ = {
+    supybot.authors.jamessan: ['cnn', 'wunder', 'wunder.rss',
+                               'temperatureUnit configuration variable',
+                               'convert configuration variable'],
+    supybot.authors.jemfinch: ['weather'],
+    supybot.authors.bwp: ['ham'],
+    supybot.authors.mtughan: ['cnn', 'wunder', 'wunder.rss', 'ham'],
+    }
+
+import config
+import plugin
+reload(plugin) # In case we're being reloaded.
+# Add more reloads here if you add third-party modules and want them to be
+# reloaded when this plugin is reloaded.  Don't forget to import them as well!
+
+if world.testing:
+    import test
+
+Class = plugin.Class
+configure = config.configure
 
 
-MNFHRules = conf.registerPlugin('MNFHRules')
-# This is where your configuration variables (if any) should go.  For example:
-# conf.registerGlobalValue(MNFHRules, 'someConfigVariableName',
-#     registry.Boolean(False, """Help for someConfigVariableName."""))
-
-conf.registerChannelValue(MNFHRules, 'ops',
-     registry.String('', """Comma separated list of who can control duckhunt"""))
-
-# vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
+# vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:

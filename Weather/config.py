@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2014, scornflakes
+# Copyright (c) 2005, James Vega
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,12 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
 ###
 
+import plugin
+
 import supybot.conf as conf
+import supybot.utils as utils
 import supybot.registry as registry
 
 def configure(advanced):
@@ -37,15 +39,35 @@ def configure(advanced):
     # user or not.  You should effect your configuration by manipulating the
     # registry as appropriate.
     from supybot.questions import expect, anything, something, yn
-    conf.registerPlugin('MNFHRules', True)
+    conf.registerPlugin('Weather', True)
+
+class WeatherUnit(registry.String):
+    def setValue(self, s):
+        s = s.capitalize()
+        if s not in plugin.unitAbbrevs:
+            raise registry.InvalidRegistryValue,\
+                  'Unit must be one of Fahrenheit, Celsius, or Kelvin.'
+        s = plugin.unitAbbrevs[s]
+        registry.String.setValue(self, s)
+
+class WeatherCommand(registry.OnlySomeStrings):
+    validStrings = plugin.Weather.weatherCommands
+
+Weather = conf.registerPlugin('Weather')
+conf.registerChannelValue(Weather, 'temperatureUnit',
+    WeatherUnit('Fahrenheit', """Sets the default temperature unit to use when
+    reporting the weather."""))
+conf.registerChannelValue(Weather, 'command',
+    WeatherCommand('wunder', """Sets the default command to use when retrieving
+    the weather.  Command must be one of %s.""" %
+    utils.str.commaAndify(plugin.Weather.weatherCommands, And='or')))
+conf.registerChannelValue(Weather, 'convert',
+    registry.Boolean(True, """Determines whether the weather commands will
+    automatically convert weather units to the unit specified in
+    supybot.plugins.Weather.temperatureUnit."""))
+
+conf.registerUserValue(conf.users.plugins.Weather, 'lastLocation',
+    registry.String('', ''))
 
 
-MNFHRules = conf.registerPlugin('MNFHRules')
-# This is where your configuration variables (if any) should go.  For example:
-# conf.registerGlobalValue(MNFHRules, 'someConfigVariableName',
-#     registry.Boolean(False, """Help for someConfigVariableName."""))
-
-conf.registerChannelValue(MNFHRules, 'ops',
-     registry.String('', """Comma separated list of who can control duckhunt"""))
-
-# vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
+# vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
