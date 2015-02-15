@@ -115,7 +115,7 @@ class MNFHRules(callbacks.Plugin):
     snuggle = wrap(snuggle, ['text'])
 
     @internationalizeDocstring
-    def oplist(self, irc, msg, args, user_name):
+    def oplist(self, irc, msg, args):
         """ lists channel ops
         """
         current_channel = msg.args[0]
@@ -123,7 +123,7 @@ class MNFHRules(callbacks.Plugin):
     oplist = wrap(oplist)
 
 
-    def callops(self, irc, msg, args, user_name):
+    def callops(self, irc, msg, args):
         """ lists channel ops
         """
         current_channel = msg.args[0]
