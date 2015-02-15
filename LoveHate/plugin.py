@@ -179,9 +179,7 @@ class LoveHate(callbacks.Plugin):
             if len(results[key]) > 0:
                 if len(results[key]) > 1:
                     results2 = []
-
                     for result in results[key]:
-
                         results2+=(_unpingatize(result, irc.state.channels[msg.args[0]].users),)
                     users = ', '.join(results2[0:-1]) + ' and ' + results2[-1]
                     verb = key
@@ -236,7 +234,10 @@ class LoveHate(callbacks.Plugin):
                 if 'sarcasm' in dict(opts):
                     verb = SARCASTIC[verb]
                 if len(results[key]) > 1:
-                    things = '; '.join(results[key][0:-1]) + '; and ' + results[key][-1]
+                    results2 = []
+                    for result in results[key]:
+                        results2 += (_unpingatize(result, irc.state.channels[msg.args[0]].users),)
+                    things = '; '.join(results2[0:-1]) + '; and ' + results2[-1]
                 else:
                     things = ' and '.join(results[key])
                 irc.reply(' '.join((user, verb, things)), prefixNick=False)
