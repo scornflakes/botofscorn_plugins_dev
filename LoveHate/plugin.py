@@ -177,6 +177,9 @@ class LoveHate(callbacks.Plugin):
         replied = False
         for key in ('love', 'hate'):
             if len(results[key]) > 0:
+                for result in results[key]:
+                    if result in irc.state.channels[channel].nicks:
+                        result='xx%sxx' % result
                 if len(results[key]) > 1:
                     users = ', '.join(results[key][0:-1]) + ' and ' + results[key][-1]
                     verb = key
