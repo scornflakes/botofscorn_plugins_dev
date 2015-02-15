@@ -180,7 +180,7 @@ class LoveHate(callbacks.Plugin):
                 if len(results[key]) > 1:
                     results2 = []
                     for result in results[key]:
-                        results2 += _unpingatize(result, irc.state.channels[channel].nicks)
+                        results2 += _unpingatize(result, irc.state.channels[msg.args[0]].nicks)
                     users = ', '.join(results2[0:-1]) + ' and ' + results2[-1]
                     verb = key
                 else:
