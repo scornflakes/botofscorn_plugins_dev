@@ -248,7 +248,7 @@ class Later(callbacks.Plugin):
                 s1  = self._formatNote(when, whence, 'I just relayed a note to you. Please check your pm from me.')
                 irc.reply(s, private=private, prefixNick=True)
                 if private:
-                        irc.reply(s1, private=True, prefixNick=True)
+                        irc.reply(s1, private=False, prefixNick=True)
             self._flushNotes()
 
     def _formatNote(self, when, whence, note):
