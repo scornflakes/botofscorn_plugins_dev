@@ -45,7 +45,7 @@ conf.registerGlobalValue(Later, 'maximum',
     registry.NonNegativeInteger(0, _("""Determines the maximum number of
     messages to be queued for a user.  If this value is 0, there is no maximum.
     """)))
-conf.registerGlobalValue(Later, 'private',
+conf.registerChannelValue(Later, 'private',
     registry.Boolean(True, _("""Determines whether users will be notified in
     the first place in which they're seen, or in private.""")))
 conf.registerGlobalValue(Later, 'tellOnJoin',
