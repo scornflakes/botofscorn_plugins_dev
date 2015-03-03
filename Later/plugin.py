@@ -245,7 +245,7 @@ class Later(callbacks.Plugin):
             private = self.registryValue('private')
             for (when, whence, note) in notes:
                 s = self._formatNote(when, whence, note)
-                irc.reply(s, private=True, prefixNick=True)
+                irc.reply(s, to=msg.nick, prefixNick=True)
                 if not private:
                         irc.reply(s, prefixNick=True)
             self._flushNotes()
