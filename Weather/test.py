@@ -1,110 +1,32 @@
 ###
-# Copyright (c) 2005,2009, James Vega
+# Copyright (c) 2012-2014, spline
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
 #
-#   * Redistributions of source code must retain the above copyright notice,
-#     this list of conditions, and the following disclaimer.
-#   * Redistributions in binary form must reproduce the above copyright notice,
-#     this list of conditions, and the following disclaimer in the
-#     documentation and/or other materials provided with the distribution.
-#   * Neither the name of the author of this software nor the name of
-#     contributors to this software may be used to endorse or promote products
-#     derived from this software without specific prior written consent.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
 ###
 
+from __future__ import unicode_literals
 from supybot.test import *
+import os
 
 class WeatherTestCase(PluginTestCase):
     plugins = ('Weather',)
-    if network:
-        def testHam(self):
-            self.assertNotError('ham Columbus, OH')
-            self.assertNotError('ham 43221')
-            self.assertNotRegexp('ham Paris, FR', 'Virginia')
-            self.assertError('ham alsdkfjasdl, asdlfkjsadlfkj')
-            self.assertNotError('ham London, gb')
-            self.assertNotError('ham London, GB')
-            self.assertNotError('ham Munich, germany')
-            self.assertNotError('ham Tucson, AZ')
-            # "Multiple locations found" test
-            self.assertNotError('ham sandwich')
 
-        def testCnn(self):
-            self.assertNotError('cnn Columbus, OH')
-            self.assertNotError('cnn 43221')
-            self.assertNotRegexp('cnn Paris, FR', 'Virginia')
-            self.assertError('cnn alsdkfjasdl, asdlfkjsadlfkj')
-            self.assertNotError('cnn London, uk')
-            self.assertNotError('cnn London, UK')
-            self.assertNotError('cnn Nurnberg, de')
-            self.assertNotError('cnn Tucson, AZ')
+    def setUp(self):
+        PluginTestCase.setUp(self)
+        apiKey = os.environ.get('apiKey')
+        if not apiKey:
+            e = """The Wunderground API key has not been set. 
+            please set this value correctly and try again:
+            'export apiKey=<key>' for bash users"""
+            raise Exception(e)
+        conf.supybot.plugins.Weather.apiKey.setValue(apiKey)
 
-        def testWunder(self):
-            self.assertNotError('wunder Columbus, OH')
-            self.assertNotError('wunder 43221')
-            self.assertNotRegexp('wunder Paris, FR', 'Virginia')
-            self.assertError('wunder alsdkfjasdl, asdlfkjsadlfkj')
-            self.assertNotError('wunder London, england')
-            self.assertNotError('wunder Munich, germany')
-            self.assertNotError('wunder Tucson, AZ')
+    def testWeather(self):
+        self.assertSnarfResponse('reload Weather', 'The operation succeeded.')
+        self.assertRegexp('wunderground 10002', 'New York, NY')
+        self.assertSnarfResponse('setweather 10002', "I have changed test's weather ID to 10002")
+        self.assertSnarfResponse('setuser metric True', "I have changed test's metric setting to 1")
+        self.assertRegexp('wunderground', 'New York, NY')
 
-        def testTemperatureUnit(self):
-            try:
-                orig = conf.supybot.plugins.Weather.temperatureUnit()
-                conf.supybot.plugins.Weather.temperatureUnit.setValue('F')
-                self.assertRegexp('cnn Columbus, OH', r'is -?\d+\.\d[^F]*F')
-                self.assertRegexp('ham Columbus, OH', r'is -?\d+\.\d[^F]*F')
-                conf.supybot.plugins.Weather.temperatureUnit.setValue('C')
-                self.assertRegexp('cnn Columbus, OH', r'is -?\d+\.\d[^C]*C')
-                self.assertRegexp('ham Columbus, OH', r'is -?\d+\.\d[^C]*C')
-                conf.supybot.plugins.Weather.temperatureUnit.setValue('K')
-                self.assertRegexp('cnn Columbus, OH', r'is -?\d+\.\d K')
-                self.assertRegexp('ham Columbus, OH', r'is -?\d+\.\d K')
-            finally:
-                conf.supybot.plugins.Weather.temperatureUnit.setValue(orig)
-
-        def testNoEscapingWebError(self):
-            self.assertNotRegexp('ham "buenos aires"', 'WebError')
-
-        def testWeatherRepliesWithBogusLocation(self):
-            self.assertRegexp('weather some place that doesn\'t exist', r'.')
-
-        def testConvertConfig(self):
-            try:
-                convert = conf.supybot.plugins.Weather.convert()
-                unit = conf.supybot.plugins.Weather.temperatureUnit()
-                conf.supybot.plugins.Weather.convert.setValue(False)
-                conf.supybot.plugins.Weather.temperatureUnit.setValue('C')
-                self.assertRegexp('ham london, gb', r'-?\d+\.\d[^C]*C')
-                self.assertRegexp('ham 02115', r'-?\d+\.\d[^F]*F')
-                conf.supybot.plugins.Weather.temperatureUnit.setValue('F')
-                self.assertRegexp('ham london, gb', r'-?\d+\.\d[^C]*C')
-                self.assertRegexp('ham 02115', r'-?\d+\.\d[^F]*F')
-                conf.supybot.plugins.Weather.convert.setValue(True)
-                conf.supybot.plugins.Weather.temperatureUnit.setValue('C')
-                self.assertRegexp('ham london, gb', r'-?\d+\.\d[^C]*C')
-                self.assertRegexp('ham 02115', r'-?\d+\.\d[^C]*C')
-                conf.supybot.plugins.Weather.temperatureUnit.setValue('F')
-                self.assertRegexp('ham london, gb', r'-?\d+\.\d[^F]*F')
-                self.assertRegexp('ham 02115', r'-?\d+\.\d[^F]*F')
-            finally:
-                conf.supybot.plugins.Weather.convert.setValue(convert)
-                conf.supybot.plugins.Weather.temperatureUnit.setValue(unit)
-
-
-# vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
+# vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:

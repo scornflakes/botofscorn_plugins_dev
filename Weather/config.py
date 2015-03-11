@@ -1,37 +1,13 @@
 ###
-# Copyright (c) 2005, James Vega
+# Copyright (c) 2012-2014, spline
 # All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-#   * Redistributions of source code must retain the above copyright notice,
-#     this list of conditions, and the following disclaimer.
-#   * Redistributions in binary form must reproduce the above copyright notice,
-#     this list of conditions, and the following disclaimer in the
-#     documentation and/or other materials provided with the distribution.
-#   * Neither the name of the author of this software nor the name of
-#     contributors to this software may be used to endorse or promote products
-#     derived from this software without specific prior written consent.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
 ###
 
-import plugin
-
 import supybot.conf as conf
-import supybot.utils as utils
 import supybot.registry as registry
+from supybot.i18n import PluginInternationalization, internationalizeDocstring
+
+_ = PluginInternationalization('Weather')
 
 def configure(advanced):
     # This will be called by supybot to configure this module.  advanced is
@@ -41,33 +17,21 @@ def configure(advanced):
     from supybot.questions import expect, anything, something, yn
     conf.registerPlugin('Weather', True)
 
-class WeatherUnit(registry.String):
-    def setValue(self, s):
-        s = s.capitalize()
-        if s not in plugin.unitAbbrevs:
-            raise registry.InvalidRegistryValue,\
-                  'Unit must be one of Fahrenheit, Celsius, or Kelvin.'
-        s = plugin.unitAbbrevs[s]
-        registry.String.setValue(self, s)
-
-class WeatherCommand(registry.OnlySomeStrings):
-    validStrings = plugin.Weather.weatherCommands
 
 Weather = conf.registerPlugin('Weather')
-conf.registerChannelValue(Weather, 'temperatureUnit',
-    WeatherUnit('Fahrenheit', """Sets the default temperature unit to use when
-    reporting the weather."""))
-conf.registerChannelValue(Weather, 'command',
-    WeatherCommand('wunder', """Sets the default command to use when retrieving
-    the weather.  Command must be one of %s.""" %
-    utils.str.commaAndify(plugin.Weather.weatherCommands, And='or')))
-conf.registerChannelValue(Weather, 'convert',
-    registry.Boolean(True, """Determines whether the weather commands will
-    automatically convert weather units to the unit specified in
-    supybot.plugins.Weather.temperatureUnit."""))
+conf.registerGlobalValue(Weather,'apiKey', registry.String('', ("""Your wunderground.com API key."""), private=True))
+conf.registerChannelValue(Weather,'useImperial', registry.Boolean(True, ("""Use imperial units? Defaults to yes.""")))
+conf.registerChannelValue(Weather,'disableColoredTemp', registry.Boolean(False, """If True, this will disable coloring temperatures based on values."""))
+# conf.registerChannelValue(Weather,'useWeatherSymbols', registry.Boolean(False, """Use unicode symbols with weather conditions and for wind direction."""))
+conf.registerGlobalValue(Weather,'forecast', registry.Boolean(True, ("""Display forecast in output by default?""")))
+conf.registerGlobalValue(Weather,'alerts', registry.Boolean(False, ("""Display alerts by default?""")))
+conf.registerGlobalValue(Weather,'almanac', registry.Boolean(False, ("""Display almanac by default?""")))
+conf.registerGlobalValue(Weather,'astronomy', registry.Boolean(False, ("""Display astronomy by default?""")))
+conf.registerGlobalValue(Weather,'showPressure', registry.Boolean(False, ("""Show pressure in output?""")))
+conf.registerGlobalValue(Weather,'showWind', registry.Boolean(False, ("""Show wind in output?""")))
+conf.registerGlobalValue(Weather,'showUpdated', registry.Boolean(False, ("""Show updated in output?""")))
+conf.registerChannelValue(Weather,'showImperialAndMetric', registry.Boolean(False, ("""In channel, display output with Imperial and Metric?""")))
+conf.registerGlobalValue(Weather,'lang', registry.String('EN', ("""language to use. See docs for available codes.""")))
 
-conf.registerUserValue(conf.users.plugins.Weather, 'lastLocation',
-    registry.String('', ''))
 
-
-# vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
+# vim:set shiftwidth=4 tabstop=4 expandtab textwidth=250:
