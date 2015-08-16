@@ -171,6 +171,7 @@ class MNFHRules(callbacks.Plugin):
     def opno(self, irc, msg, args, user_name):
         """ roll your eyes at person
         """
+        current_channel = msg.args[0]
         if not user_name:
             user_name = ""
             if msg.nick in self.registryValue('ops', current_channel):
