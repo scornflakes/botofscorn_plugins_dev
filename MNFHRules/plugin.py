@@ -168,14 +168,16 @@ class MNFHRules(callbacks.Plugin):
     eyeroll = wrap(eyeroll, [optional('text')])
 
     @internationalizeDocstring
-    def op_no(self, irc, msg, args, user_name):
+    def opno(self, irc, msg, args, user_name):
         """ roll your eyes at person
         """
         if not user_name:
             user_name = ""
-            if msg.nick in self.registryValue('ops', current_channel).split(','):
+            if msg.nick in self.registryValue('ops', current_channel):
                 irc.reply("Please do not do this, %s" % user_name)
-    op_no = wrap(op_no, [optional('text')])
+            else:
+                irc.reply("you aren't an op, %s" % msg.nick)
+    opno = wrap(opno, [optional('text')])
 
 
     def testops(self, irc, msg, args):
