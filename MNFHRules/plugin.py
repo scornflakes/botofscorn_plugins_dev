@@ -175,7 +175,7 @@ class MNFHRules(callbacks.Plugin):
         if not user_name:
             user_name = ""
         if msg.nick in self.registryValue('ops', current_channel):
-            irc.reply("Please do not do this, %s" % user_name)
+            irc.reply("Please do not do that, %s" % user_name)
         else:
             irc.reply("you aren't an op, %s" % msg.nick)
     opno = wrap(opno, [optional('text')])
