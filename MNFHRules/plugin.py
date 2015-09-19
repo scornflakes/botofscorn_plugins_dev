@@ -169,7 +169,7 @@ class MNFHRules(callbacks.Plugin):
 
     @internationalizeDocstring
     def opno(self, irc, msg, args, user_name):
-        """ roll your eyes at person
+        """ a no that only an op can do
         """
         current_channel = msg.args[0]
         if not user_name:
@@ -179,6 +179,16 @@ class MNFHRules(callbacks.Plugin):
         else:
             irc.reply("you aren't an op, %s" % msg.nick)
     opno = wrap(opno, [optional('text')])
+
+    @internationalizeDocstring
+    def minvite(self, irc, msg, args, username):
+        """ invite to #mnfh
+        """
+        irc.invite(username, '#mnfh', msg="you've been invited to #mnfh")
+        irc.reply("you have been invited to #mnfh. Please type ''/join #mnfh''")
+
+    minvite = wrap(minvite, ['text'])
+
 
 
     def testops(self, irc, msg, args):
