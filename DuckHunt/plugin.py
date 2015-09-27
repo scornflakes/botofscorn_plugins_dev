@@ -920,7 +920,7 @@ class DuckHunt(callbacks.Plugin):
             return
         
         if not self.started.get(current_channel) and targetnick:
-            irc.reply("(∩-__-)⊃ﾟ.*･｡ﾟ (x_x) %s" % targetnick)
+            irc.reply("\u0028\u2229 \u0361\u00b0 \u035c\u0296 \u0361\u00b0\u0029\u2283\u2501\u2606\uff9f\u002e \u002a \uff65 \uff61\uff9f\u002e \u002a (x_x) %s" % targetnick)
             return
         
         if not self.started.get(current_channel):
