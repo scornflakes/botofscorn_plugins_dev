@@ -27,6 +27,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 ###
 
+# -*- coding: utf-8 -*-
+
 import threading
 import random
 import pickle
