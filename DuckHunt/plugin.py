@@ -849,21 +849,21 @@ class DuckHunt(callbacks.Plugin):
 
     dbg = wrap(dbg)
 
-    def befree(self, irc, msg, args, target):
+    def befree(self, irc, msg, args, targetnick):
         """
         Saves the duck!
         """
-        self._process_shot(irc, msg, args, 'save', target)
+        self._process_shot(irc, msg, args, 'save', targetnick)
 
-    befree = wrap(befree, [optional('target')])
+    befree = wrap(befree, [optional('anything')])
 
-    def bang(self, irc, msg, args, target):
+    def bang(self, irc, msg, args, targetnick):
         """
         Shoots the duck!
         """
-        self._process_shot(irc, msg, args, 'kill', target)
+        self._process_shot(irc, msg, args, 'kill', targetnick)
 
-    bang = wrap(bang, [optional('target')])
+    bang = wrap(bang, [optional('anything')])
 
     def _increment_score(self, currentChannel, msg, duck_type, bangdelay):
         # Adds one point for the nick that shot the duck
