@@ -848,21 +848,21 @@ class DuckHunt(callbacks.Plugin):
 
     dbg = wrap(dbg)
 
-    def befree(self, irc, msg, args):
+    def befree(self, irc, msg, args, target):
         """
         Saves the duck!
         """
-        self._process_shot(irc, msg, args, 'save')
+        self._process_shot(irc, msg, args, 'save', target)
 
-    befree = wrap(befree)
+    befree = wrap(befree, [optional('target')])
 
-    def bang(self, irc, msg, args):
+    def bang(self, irc, msg, args, target):
         """
         Shoots the duck!
         """
-        self._process_shot(irc, msg, args, 'kill')
+        self._process_shot(irc, msg, args, 'kill', target)
 
-    bang = wrap(bang)
+    bang = wrap(bang, [optional('target')])
 
     def _increment_score(self, currentChannel, msg, duck_type, bangdelay):
         # Adds one point for the nick that shot the duck
@@ -911,13 +911,17 @@ class DuckHunt(callbacks.Plugin):
                 self.scores[currentChannel] = {}
                 self.scores[currentChannel][msg.nick] = pointval
 
-    def _process_shot(self, irc, msg, args, player_action):
+    def _process_shot(self, irc, msg, args, player_action, targetnick):
         current_channel = msg.args[0]
 
         if not irc.isChannel(current_channel):
             irc.error('You have to be on a channel')
             return
-
+        
+        if not self.started.get(current_channel) and targetnick:
+            irc.reply("(∩｀-´)⊃ﾟ.*･｡ﾟ (x_x)  %s" % targetnick)
+            return
+        
         if not self.started.get(current_channel):
             irc.reply("There is no hunt right now! Ask an op to start a hunt!")
             return
